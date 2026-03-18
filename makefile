@@ -1,5 +1,10 @@
 DATA_DIR := data
 GRAPE_DIR := $(DATA_DIR)/GRAPE
+UWHVF_DIR := $(DATA_DIR)/UWHVF
+
+all: data
+
+data: grape uwhvf
 
 # GRAPE dataset: https://springernature.figshare.com/collections/_/6406319
 # Mapping: Figshare file ID : local filename
@@ -10,9 +15,7 @@ FIGSHARE_FILES := \
 	41358162:annotations_json.rar \
 	41358150:ROI_images.rar
 
-all: data
-
-data:
+grape:
 	@mkdir -p $(GRAPE_DIR)
 	@echo "Downloading GRAPE Figshare files..."
 	@for file in $(FIGSHARE_FILES); do \
@@ -25,6 +28,16 @@ data:
 			echo "$$NAME already exists, skipping."; \
 		fi; \
 	done
+
+uwhvf:
+	@mkdir -p $(DATA_DIR)
+	@if [ ! -d $(UWHVF_DIR) ]; then \
+		echo "Cloning UWHVF dataset..."; \
+		git clone https://github.com/uw-biomedical-ml/uwhvf.git $(UWHVF_DIR); \
+	else \
+		echo "UWHVF already exists, pulling latest..."; \
+		cd $(UWHVF_DIR) && git pull; \
+	fi
 
 clean-data:
 	rm -rf $(DATA_DIR)
