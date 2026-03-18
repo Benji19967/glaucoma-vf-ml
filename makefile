@@ -20,7 +20,7 @@ data:
 		NAME=$${file##*:}; \
 		if [ ! -f $(GRAPE_DIR)/$$NAME ]; then \
 			echo "Downloading $$NAME from Figshare file ID $$ID..."; \
-			wget -O $(GRAPE_DIR)/$$NAME "https://springernature.figshare.com/ndownloader/files/$$ID"; \
+			wget -O $(GRAPE_DIR)/$$NAME "https://api.figshare.com/v2/file/download/$$ID"; \
 		else \
 			echo "$$NAME already exists, skipping."; \
 		fi; \
