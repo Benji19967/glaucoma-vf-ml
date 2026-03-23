@@ -4,7 +4,8 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 ## Getting the data
 
 ```
-make data
+source .venv/bin/activate
+python scripts/setup_data.py
 ```
 
 ## Ubelix
