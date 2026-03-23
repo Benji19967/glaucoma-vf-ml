@@ -1,6 +1,12 @@
 # glaucoma-vf-ml
 Deep learning for glaucoma analysis using visual field (perimetry) data
 
+## Setting up the python `.venv`
+
+```
+uv sync
+```
+
 ## Getting the data
 
 ```
