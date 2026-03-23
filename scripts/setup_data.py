@@ -1,9 +1,18 @@
 import shutil
 import subprocess
+from pathlib import Path
 
+import git
 import requests
 
-from glaucoma_vf.utils import get_git_root
+
+def get_git_root(path) -> Path:
+
+    git_repo = git.Repo(path, search_parent_directories=True)
+    git_root = git_repo.git.rev_parse("--show-toplevel")
+
+    return Path(git_root)
+
 
 ROOT = get_git_root(__file__)
 DATA_DIR = ROOT / "data"
