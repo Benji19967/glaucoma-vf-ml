@@ -1,6 +1,27 @@
 # glaucoma-vf-ml
 Deep learning for glaucoma analysis using visual field (perimetry) data
 
+## Folder Structure
+
+    .
+    │
+    ├── data
+    │   ├── GRAPE
+    │   └── UWHVF
+    │   
+    ├── notebooks
+    │   └── GRAPE.ipynb
+    │   
+    ├── scripts
+    │   └── setup_data.py
+    │
+    ├── src
+    │   └── glaucoma_vf
+    │       ├── models
+    │       └── training
+    │
+    └── README.md
+
 ## Setting up the python `.venv`
 
 ```
