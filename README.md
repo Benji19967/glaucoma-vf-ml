@@ -1,11 +1,6 @@
 # glaucoma-vf-ml
 Deep learning for glaucoma analysis using visual field (perimetry) data
 
-## Project Overview
-Task | Model | Input | Status
-:--- | :--- | :--- | :---
-[Glaucoma classification](./docs/task1_classifier.md) | - | 54-point HVF | in progress
-
 ## Folder Structure
 
     .
@@ -27,6 +22,11 @@ Task | Model | Input | Status
     │       └── training
     │
     └── README.md
+
+## Project Overview
+| Task | Model | Input | Status |
+| :--- | :--- | :--- | :--- |
+| [Glaucoma classification](./docs/task1_classifier.md) | - | 54-point HVF | in progress |
 
 ## Setting up the python `.venv`
 
