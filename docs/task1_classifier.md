@@ -1,6 +1,6 @@
-# Task 1: Classifier
+# Task 1: Glaucoma Severity Classification
 
-The goal is to classify the severity of glaucoma.
+This task involves categorizing the functional loss of a patient's vision based on a single static perimetry snapshot.
 
 **TODO**: remove the link below once the model card is complete.
 
@@ -40,4 +40,3 @@ One of
   - **Mild**: (MD > -6 dB)
   - **Moderate**: (-6 dB ≥ MD ≥ -12 dB)
   - **Severe**: (MD < -12 dB)
-
