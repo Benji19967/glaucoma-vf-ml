@@ -1,6 +1,11 @@
 # glaucoma-vf-ml
 Deep learning for glaucoma analysis using visual field (perimetry) data
 
+## Project Overview
+| Task | Model | Input | Status |
+| :--- | :--- | :--- | :--- |
+| [Glaucoma classification](./docs/task1_classifier.md) | - | 224x224 RGB | in progress |
+
 ## Folder Structure
 
     .
@@ -14,7 +19,7 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
     │   └── UWHVF.ipynb         # Exploring the UWHVF dataset
     │   
     ├── scripts
-    │   └── setup_data.py
+    │   └── setup_data.py       # Download the GRAPE and UWHVF datasets
     │
     ├── src
     │   └── glaucoma_vf
