@@ -6,11 +6,12 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
     .
     │
     ├── data
-    │   ├── GRAPE
-    │   └── UWHVF
+    │   ├── GRAPE               # GRAPE dataset
+    │   └── UWHVF               # UWHVF dataset
     │   
     ├── notebooks
-    │   └── GRAPE.ipynb
+    │   ├── GRAPE.ipynb         # Exploring the GRAPE dataset
+    │   └── UWHVF.ipynb         # Exploring the UWHVF dataset
     │   
     ├── scripts
     │   └── setup_data.py
