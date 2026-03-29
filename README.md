@@ -28,93 +28,43 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 | :--- | :--- | :--- | :--- |
 | [Glaucoma classification](./docs/task1_classifier.md) | - | 54-point HVF | in progress |
 
-## Setting up the python `.venv`
+## Running locally
+
+### Setting up the python `.venv`
 
 ```
 uv sync
 ```
 
-## Getting the data
+### Getting the data
 
 ```
 source .venv/bin/activate
 python scripts/setup_data.py
 ```
 
-## Running the training
+### Running the training
 
 ```
 python src/glaucoma_vf/training/train.py
 ```
 
 
-## Checking the logs
+### Checking the logs
 
 ```
 tensorboard --logdir .
 ```
 
-## Ubelix
+## Running on Ubelix HPC (with GPUs)
 
-Load conda:
-
-```
-module load Anaconda3
-conda --version
-```
-
-You can always check which modules are loaded in you current shell:
-
-```
-module list
-```
-
-Create a conda env:
-
-```
-conda create -n glaucoma python=3.13
-```
-
-Initialize conda: (only need to run this once, it sets up conda in `~/.bashrc`)
-
-```
-conda init
-source ~/.bashrc
-```
-
-Activate the environment:
-
-```
-conda activate glaucoma
-```
-
-Load CUDA:
-```
-module load CUDA/12.1
-nvcc --version
-```
-
-Install PyTorch:
-
-```
-conda install pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia
-```
-
-Install uv: (will be used for (non-GPU-related) Python package management)
-
-```
-pip install uv
-```
-
-### Apptainer
-
-#### Building the apptainer
+### Building the apptainer
 
 ```
 apptainer build glaucoma-ml.sif Apptainer.def
 ```
 
-#### Running the apptainer
+### Running the apptainer
 
 To run on a GPU node:
 
@@ -128,7 +78,10 @@ then on the `gnode`:
 apptainer run --nv --bind ./data:/glaucoma-vf-ml/data glaucoma-ml.sif
 ```
 
-#### Creating a sandbox environment
+
+### Creating a sandbox apptainer environment
+
+This is useful for quick development and avoids having to rebuild the `.sif` file from scratch every time.
 
 Create a sandbox environment:
 
@@ -145,4 +98,3 @@ apptainer shell --bind data:/glaucoma-vf-ml/data --writable hvf_sandbox/
 ```
 
 Alternative to `which python`: `command -v python`
-
