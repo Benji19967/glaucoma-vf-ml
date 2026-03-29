@@ -97,4 +97,7 @@ mkdir -p hvf_sandbox/glaucoma-vf-ml/data
 apptainer shell --bind data:/glaucoma-vf-ml/data --writable hvf_sandbox/
 ```
 
-Alternative to `which python`: `command -v python`
+Now you can install (apt or python) packages from withing the container to test things out. 
+Make sure to edit the `Apptainer.def` file for permanent changes.
+
+Note: `which` may not work as expected inside the apptainer, use `command -v` instead.
