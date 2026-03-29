@@ -41,6 +41,19 @@ source .venv/bin/activate
 python scripts/setup_data.py
 ```
 
+## Running the training
+
+```
+python src/glaucoma_vf/training/train.py
+```
+
+
+## Checking the logs
+
+```
+tensorboard --logdir .
+```
+
 ## Ubelix
 
 Load conda:
