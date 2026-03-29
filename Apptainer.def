@@ -16,20 +16,9 @@ From: nvidia/cuda:12.1.1-runtime-ubuntu22.04
     # 2. Install uv (standalone binary)
     curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
 
+    # 3. Create python .venv with required packages from uv.lock
     cd /glaucoma-vf-ml
     uv sync --frozen
-
-    # 3. Use uv to install Deep Learning stack 
-    # We use --system to install directly into python of the container
-    # uv pip install --system --upgrade pip
-    
-    # Install PyTorch with the specific CUDA index
-    # uv pip install --system \
-    #    --index-url https://download.pytorch.org/whl/cu121 \
-    #    torch torchvision torchaudio
-
-    # Install other data science tools
-    # uv pip install --system numpy pandas matplotlib
 
     # 4. Cleanup to reduce image size
     apt-get clean
