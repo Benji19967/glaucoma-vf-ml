@@ -39,7 +39,8 @@ class UWHVFDataset(Dataset):
                 - label: The classification category
                   Shape: () (Scalar LongTensor)
         """
-        return self.grids[idx], self.labels[idx].squeeze()
+        grid = torch.as_tensor(self.grids[idx], dtype=torch.float32).unsqueeze(0)
+        return grid, self.labels[idx].squeeze()
 
 
 class UWHVFDataModule(L.LightningDataModule):
