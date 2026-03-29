@@ -1,5 +1,7 @@
 data/
 lightning_logs/
+hvf_sandbox/
+*.sif
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

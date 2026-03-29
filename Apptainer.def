@@ -1,0 +1,49 @@
+Bootstrap: docker
+From: nvidia/cuda:12.1.1-runtime-ubuntu22.04
+
+%files
+    ./pyproject.toml /glaucoma-vf-ml/pyproject.toml
+    ./uv.lock /glaucoma-vf-ml/uv.lock
+    ./src /glaucoma-vf-ml/src
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+
+    # 1. Install system basics
+    apt-get update && apt-get install -y --no-install-recommends \
+        curl ca-certificates python3 python3-pip git
+
+    # 2. Install uv (standalone binary)
+    curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh
+
+    cd /glaucoma-vf-ml
+    uv sync --frozen
+
+    # 3. Use uv to install Deep Learning stack 
+    # We use --system to install directly into python of the container
+    # uv pip install --system --upgrade pip
+    
+    # Install PyTorch with the specific CUDA index
+    # uv pip install --system \
+    #    --index-url https://download.pytorch.org/whl/cu121 \
+    #    torch torchvision torchaudio
+
+    # Install other data science tools
+    # uv pip install --system numpy pandas matplotlib
+
+    # 4. Cleanup to reduce image size
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+    # Optional: remove uv cache to save space (can be 1GB+)
+    rm -rf /root/.cache/uv
+
+%environment
+    export LC_ALL=C
+    export PATH=/usr/local/cuda/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+    export PATH="/glaucoma-vf-ml/.venv/bin:$PATH"
+    export PROJECT_ROOT=/glaucoma-vf-ml
+
+
+%runscript
+    python src/glaucoma_vf/training/train.py

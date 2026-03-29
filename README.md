@@ -106,4 +106,43 @@ Install uv: (will be used for (non-GPU-related) Python package management)
 pip install uv
 ```
 
+### Apptainer
+
+#### Building the apptainer
+
+```
+apptainer build glaucoma-ml.sif Apptainer.def
+```
+
+#### Running the apptainer
+
+To run on a GPU node:
+
+```
+srun --partition=gpu --gres=gpu:rtx4090:1 --cpus-per-task=4 --nodes=1 --mem=16G --time=02:00:00 --pty bash
+```
+
+then on the `gnode`:
+
+```
+apptainer run --nv --bind ./data:/glaucoma-vf-ml/data glaucoma-ml.sif
+```
+
+#### Creating a sandbox environment
+
+Create a sandbox environment:
+
+```
+apptainer build --sandbox hvf_sandbox/ Apptainer.def
+```
+
+Make the sandbox editable:
+```
+mkdir -p hvf_sandbox/storage
+mkdir -p hvf_sandbox/etc/localtime
+mkdir -p hvf_sandbox/glaucoma-vf-ml/data
+apptainer shell --bind data:/glaucoma-vf-ml/data --writable hvf_sandbox/
+```
+
+Alternative to `which python`: `command -v python`
 
