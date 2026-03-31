@@ -1,7 +1,9 @@
 import lightning as L
+import numpy as np
 import polars as pl
 import polars.selectors as cs
 import torch
+from sklearn.model_selection import GroupShuffleSplit
 from torch.utils.data import DataLoader, Dataset
 
 from glaucoma_vf.data_utils import df_to_hvf_grids, map_mtd_to_enum
@@ -59,10 +61,49 @@ class UWHVFDataModule(L.LightningDataModule):
         mtd = df.select(cs.by_name("MTD")).to_numpy().squeeze()
         labels = map_mtd_to_enum(mtd)
 
-        # Split into train, val, and test sets
-        train_set, val_set, test_set = torch.utils.data.random_split(
-            UWHVFDataset(grids, labels), [0.8, 0.1, 0.1]
+        # Create the full dataset object
+        full_dataset = UWHVFDataset(grids, labels)
+
+        # --- Patient-Level Split Logic ---
+        # We need the PatientID column to define our groups
+        patient_ids = df.select(pl.col("PatID")).to_numpy().squeeze()
+
+        # Split 1: Separate Test (10%) from the rest (90%)
+        gss_test = GroupShuffleSplit(n_splits=1, train_size=0.9, random_state=42)
+        train_val_idx, test_idx = next(
+            gss_test.split(grids, labels, groups=patient_ids)
         )
+
+        # Split 2: Separate Train (80% total) and Val (10% total)
+        # Since 0.1 is 1/9th of 0.9, we use train_size=0.888 (approx 8/9)
+        gss_val = GroupShuffleSplit(n_splits=1, train_size=0.888, random_state=42)
+
+        # Filter the IDs to only include the non-test patients for the second split
+        train_idx_sub, val_idx_sub = next(
+            gss_val.split(
+                grids[train_val_idx],
+                labels[train_val_idx],
+                groups=patient_ids[train_val_idx],
+            )
+        )
+
+        # Map back to original indices
+        train_idx = train_val_idx[train_idx_sub]
+        val_idx = train_val_idx[val_idx_sub]
+
+        # 4. Create Subsets using the indices
+        train_set = torch.utils.data.Subset(full_dataset, train_idx)
+        val_set = torch.utils.data.Subset(full_dataset, val_idx)
+        test_set = torch.utils.data.Subset(full_dataset, test_idx)
+
+        print(
+            f"Split complete: Train={len(train_idx)}, Val={len(val_idx)}, Test={len(test_idx)}"
+        )
+
+        # # Split into train, val, and test sets
+        # train_set, val_set, test_set = torch.utils.data.random_split(
+        #     UWHVFDataset(grids, labels), [0.8, 0.1, 0.1]
+        # )
 
         if stage == "fit":
             self.train_ds = train_set

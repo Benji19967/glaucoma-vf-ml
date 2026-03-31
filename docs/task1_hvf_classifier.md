@@ -27,7 +27,7 @@ A basic [CNN model](../src/glaucoma_vf/models/hvf_cnn_classifier.py).
 
 ### Model dependencies
 
-There are no model dependencies, the model was training from scratch.
+There are no model dependencies, the model was trained from scratch.
 
 ### Inputs
 

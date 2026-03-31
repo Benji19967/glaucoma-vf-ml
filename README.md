@@ -38,7 +38,7 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 ## Project Overview
 | Task | Model | Input | Status |
 | :--- | :--- | :--- | :--- |
-| [Glaucoma classification](./docs/task1_hvf_classifier.md) | - | 54-point HVF | in progress |
+| [Glaucoma classification](./docs/task1_hvf_classifier.md) | CNN | 54-point HVF | in progress |
 
 ## Running locally
 
