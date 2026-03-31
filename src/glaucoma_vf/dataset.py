@@ -68,6 +68,9 @@ class UWHVFDataModule(L.LightningDataModule):
             self.train_ds = train_set
             self.val_ds = val_set
 
+        if stage == "validate":
+            self.val_ds = val_set
+
         if stage == "test":
             self.test_ds = test_set
 

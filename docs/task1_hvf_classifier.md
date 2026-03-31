@@ -23,16 +23,17 @@ The UWHVF dataset contains a **Mean Total Deviation** field (`MTD`)
 
 ### Description
 
-**TODO**: which model was chosen?
+A basic [CNN model](../src/glaucoma_vf/models/hvf_cnn_classifier.py).
 
 ### Model dependencies
 
-**TODO**: Is this model a modification or a fine-tune of a prior model?
+There are no model dependencies, the model was training from scratch.
 
 ### Inputs
 
-Humphrey Visual Field: 54 points (52 test points plus two blind spot locations)
+8x9 grid of 54 HVF points, the empty cells were filled with a value of `100` to fill up the grid.
 
+Humphrey Visual Field: 54 points (52 test points plus two blind spot locations)
 
 ### Outputs
 

@@ -1,5 +1,5 @@
 data/
-lightning_logs/
+logs/
 hvf_sandbox/
 *.sif
 

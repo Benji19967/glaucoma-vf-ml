@@ -33,6 +33,5 @@ From: nvidia/cuda:12.1.1-runtime-ubuntu22.04
     export PATH="/glaucoma-vf-ml/.venv/bin:$PATH"
     export PROJECT_ROOT=/glaucoma-vf-ml
 
-
 %runscript
     python src/glaucoma_vf/training/train.py

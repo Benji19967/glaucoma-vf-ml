@@ -9,12 +9,24 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
     │   ├── GRAPE               # GRAPE dataset
     │   └── UWHVF               # UWHVF dataset
     │   
+    ├── docs                    # Model card for each model
+    │   
+    ├── logs
+    │   ├── <model_1>
+    │       ├── <version_1>     # Logs, configs, and checkpoints for <model> & <version>
+    │       └── <version_2>
+    │   ├── <model_2>
+    │       └── ...
+    │   └── ...
+    │   
     ├── notebooks
     │   ├── GRAPE.ipynb         # Exploring the GRAPE dataset
     │   └── UWHVF.ipynb         # Exploring the UWHVF dataset
     │   
     ├── scripts
-    │   └── setup_data.py       # Download the GRAPE and UWHVF datasets
+    │   ├── setup_data.py       # Download the GRAPE and UWHVF datasets
+    │   ├── test.sh             # Script to launch test run
+    │   └── train.sh            # Script to launch train run
     │
     ├── src
     │   └── glaucoma_vf
@@ -26,7 +38,7 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 ## Project Overview
 | Task | Model | Input | Status |
 | :--- | :--- | :--- | :--- |
-| [Glaucoma classification](./docs/task1_classifier.md) | - | 54-point HVF | in progress |
+| [Glaucoma classification](./docs/task1_hvf_classifier.md) | - | 54-point HVF | in progress |
 
 ## Running locally
 
@@ -43,12 +55,43 @@ source .venv/bin/activate
 python scripts/setup_data.py
 ```
 
-### Running the training
+### Training a model (`fit`)
 
+Configure the params in `config/<model_name>.yaml` (create the file when adding new models).
+
+Training the default model:
 ```
-python src/glaucoma_vf/training/train.py
+./scripts/train.sh
 ```
 
+Training a specific model:
+```
+./scripts/train.sh <model_name>
+```
+
+These commands will create an entry in `logs/<model_name>/<version>`. The `version` is `v_<timestamp>`. 
+
+
+### Testing a model (`test`)
+
+Testing the default model:
+```
+./scripts/test.sh
+```
+
+Testing the latest version of a model:
+```
+./scripts/test.sh <model_name>
+```
+
+Testing a specific version of a model:
+```
+./scripts/test.sh <model_name> <version_name>
+```
+For example
+```
+./scripts/test.sh hvf_classifier v_20260331_122923
+```
 
 ### Checking the logs
 
