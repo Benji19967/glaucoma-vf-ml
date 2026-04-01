@@ -5,7 +5,9 @@ import polars.selectors as cs
 from glaucoma_vf.enums import GlaucomaSeverity
 
 
-def df_to_hvf_grids(df: pl.DataFrame, fill_value: float = 100.0) -> np.ndarray:
+def df_to_hvf_grids(
+    df: pl.DataFrame, columns_prefix: str = "Sens_", fill_value: float = 100.0
+) -> np.ndarray:
     """
     Converts a Polars DataFrame of 54 columns into a 3D NumPy array (N, 8, 9).
     """
@@ -13,7 +15,7 @@ def df_to_hvf_grids(df: pl.DataFrame, fill_value: float = 100.0) -> np.ndarray:
 
     # 1. Convert the entire DF to a flat 2D numpy array (N, 54)
     # Ensure we only take the Sens columns
-    data_54 = df.select(cs.starts_with("Sens_")).to_numpy().astype(np.float32)
+    data_54 = df.select(cs.starts_with(columns_prefix)).to_numpy().astype(np.float32)
 
     # 2. Create the empty destination stack (N, 8, 9) filled with 100.0
     stack = np.full((num_rows, 8, 9), fill_value, dtype=np.float32)

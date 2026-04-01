@@ -4,6 +4,7 @@ import polars as pl
 import polars.selectors as cs
 import torch
 from sklearn.model_selection import GroupShuffleSplit
+from torch._C import dtype
 from torch.utils.data import DataLoader, Dataset
 
 from glaucoma_vf.data_utils import df_to_hvf_grids, map_mtd_to_enum
@@ -15,34 +16,77 @@ VF_DATA_FILENAME = UWHVF_DIR / "CSV" / "VF_Data.csv"
 
 
 class UWHVFDataset(Dataset):
-    def __init__(self, grids, labels):
+    def __init__(
+        self,
+        x_grids,
+        x_age,
+        x_years_from_baseline,
+        x_years_since_last,
+        y_class,
+        y_mtd,
+        y_grids,
+    ):
         """
         Args:
-            grids (`np.array`):
+            x_grids (`np.array`):
                 Humphrey Visual Field grids.
                 Shape: (N, 8, 9) where 1 is the single-channel
                 sensitivity map.
-            labels (`np.array`):
+            x_age (`np.array`):
+                A list or numpy array of the age of the patient at measurement
+                Shape: (N,)
+            x_years_from_baseline (`np.array`):
+                A list or numpy array of the years since first measurement
+                Shape: (N,)
+            x_years_since_last_measurement (`np.array`):
+                A list or numpy array of the years since the last measurement
+                Shape: (N,)
+            y_class (`np.array`):
                 A list or numpy array of the Enum/Integer labels
                 Shape: (N,)
+            y_mtd (`np.array`):
+                A list or numpy array of the mean total deviation labels
+                Shape: (N,)
+            y_grids (`np.array`):
+                Humphrey Visual Field grids.
+                Shape: (N, 8, 9) where 1 is the single-channel
+                sensitivity map.
         """
-        self.grids = grids
-        self.labels = labels
+        self.x_grids = x_grids
+        self.x_age = x_age
+        self.x_years_from_baseline = x_years_from_baseline
+        self.x_years_since_last = x_years_since_last
+        self.y_class = y_class
+        self.y_mtd = y_mtd
+        self.y_grids = y_grids
 
     def __len__(self) -> int:
-        return len(self.grids)
+        return len(self.x_grids)
 
-    def __getitem__(self, idx) -> tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(
+        self, idx
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Returns:
             tuple[torch.Tensor, torch.Tensor]: A tuple containing:
                 - feature: The 8x9 HVF sensitivity grid
                   Shape: (1, 8, 9) (C, H, W)
-                - label: The classification category
+                - y_class: The classification category
+                  Shape: () (Scalar LongTensor)
+                - y_mtd: The mean total deviation
                   Shape: () (Scalar LongTensor)
         """
-        grid = torch.as_tensor(self.grids[idx], dtype=torch.float32).unsqueeze(0)
-        return grid, self.labels[idx].squeeze()
+        x_grid = torch.as_tensor(self.x_grids[idx], dtype=torch.float32).unsqueeze(0)
+        y_grid = torch.as_tensor(self.y_grids[idx], dtype=torch.float32).unsqueeze(0)
+        y_class = torch.as_tensor(self.y_class[idx].squeeze(), dtype=torch.int16)
+        y_mtd = torch.as_tensor(self.y_mtd[idx].squeeze(), dtype=torch.float32)
+
+        return (
+            x_grid,
+            y_class,
+            y_mtd,
+            y_grid,
+        )
 
 
 class UWHVFDataModule(L.LightningDataModule):
@@ -54,15 +98,52 @@ class UWHVFDataModule(L.LightningDataModule):
     def setup(self, stage: str):
         df = pl.read_csv(self.csv_path, schema_overrides={"Sens_35": pl.Float32})
 
-        # Load grids from CSV
-        grids = df_to_hvf_grids(df)
+        # Shift for forecasting -- if a patient has 10 measurements, we keep 9 (intervals)
+        # SensPrevious_ will be the x grid (feature)
+        # Sens_ will be the y grid (label)
+        for i in range(1, 55):
+            df = df.with_columns(pl.col(f"Sens_{i}").alias(f"SensPrevious_{i}").shift())
+        df = df.remove(pl.col("Time_from_Baseline") == 0.0)
 
-        # Load labels from CSV
-        mtd = df.select(cs.by_name("MTD")).to_numpy().squeeze()
-        labels = map_mtd_to_enum(mtd)
+        # Load grids from CSV
+        x_grids = df_to_hvf_grids(df, columns_prefix="SensPrevious_")
+        y_grids = df_to_hvf_grids(df, columns_prefix="Sens_")
+
+        # Load age from CSV
+        x_age = df.select(cs.by_name("Age")).to_numpy().squeeze()
+
+        # Load years from baseline from CSV
+        x_years_from_baseline = (
+            df.select(cs.by_name("Time_from_Baseline")).to_numpy().squeeze()
+        )
+
+        # Compute years since last visit
+        years_from_baseline = df.select(cs.by_name("Time_from_Baseline"))
+        x_years_since_last_measurement = (
+            years_from_baseline.with_columns(
+                Time_Delta=pl.col("Time_from_Baseline").diff().clip(lower_bound=0)
+            )
+            .fill_null(0)
+            .to_numpy()
+            .squeeze()
+        )
+
+        # Load mtd from CSV
+        y_mtd = df.select(cs.by_name("MTD")).to_numpy().squeeze()
+
+        # Create class labels from mtd
+        y_class = map_mtd_to_enum(y_mtd)
 
         # Create the full dataset object
-        full_dataset = UWHVFDataset(grids, labels)
+        full_dataset = UWHVFDataset(
+            x_grids,
+            x_age,
+            x_years_from_baseline,
+            x_years_since_last_measurement,
+            y_class,
+            y_mtd,
+            y_grids,
+        )
 
         # --- Patient-Level Split Logic ---
         # We need the PatientID column to define our groups
@@ -71,7 +152,7 @@ class UWHVFDataModule(L.LightningDataModule):
         # Split 1: Separate Test (10%) from the rest (90%)
         gss_test = GroupShuffleSplit(n_splits=1, train_size=0.9, random_state=42)
         train_val_idx, test_idx = next(
-            gss_test.split(grids, labels, groups=patient_ids)
+            gss_test.split(x_grids, y_class, groups=patient_ids)
         )
 
         # Split 2: Separate Train (80% total) and Val (10% total)
@@ -81,8 +162,8 @@ class UWHVFDataModule(L.LightningDataModule):
         # Filter the IDs to only include the non-test patients for the second split
         train_idx_sub, val_idx_sub = next(
             gss_val.split(
-                grids[train_val_idx],
-                labels[train_val_idx],
+                x_grids[train_val_idx],
+                y_class[train_val_idx],
                 groups=patient_ids[train_val_idx],
             )
         )
@@ -99,11 +180,6 @@ class UWHVFDataModule(L.LightningDataModule):
         print(
             f"Split complete: Train={len(train_idx)}, Val={len(val_idx)}, Test={len(test_idx)}"
         )
-
-        # # Split into train, val, and test sets
-        # train_set, val_set, test_set = torch.utils.data.random_split(
-        #     UWHVFDataset(grids, labels), [0.8, 0.1, 0.1]
-        # )
 
         if stage == "fit":
             self.train_ds = train_set

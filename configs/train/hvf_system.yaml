@@ -4,4 +4,4 @@ model:
 data:
   batch_size: 32
 trainer:
-  max_epochs: 3
+  max_epochs: 20
