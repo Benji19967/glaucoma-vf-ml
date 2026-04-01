@@ -92,9 +92,9 @@ class UWHVFDataModule(L.LightningDataModule):
         val_idx = train_val_idx[val_idx_sub]
 
         # 4. Create Subsets using the indices
-        train_set = torch.utils.data.Subset(full_dataset, train_idx)
-        val_set = torch.utils.data.Subset(full_dataset, val_idx)
-        test_set = torch.utils.data.Subset(full_dataset, test_idx)
+        train_set = torch.utils.data.Subset(full_dataset, train_idx.tolist())
+        val_set = torch.utils.data.Subset(full_dataset, val_idx.tolist())
+        test_set = torch.utils.data.Subset(full_dataset, test_idx.tolist())
 
         print(
             f"Split complete: Train={len(train_idx)}, Val={len(val_idx)}, Test={len(test_idx)}"

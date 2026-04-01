@@ -12,5 +12,5 @@ fi
 echo "🚀 Training Model: $MODEL_NAME"
 
 python cli/main.py fit \
-    --config=configs/${MODEL_NAME}.yaml \
+    --config=configs/train/${MODEL_NAME}.yaml \
     --trainer.logger.init_args.name=${MODEL_NAME}

@@ -77,5 +77,7 @@ class HVFClassifier(L.LightningModule):
             prog_bar=True,
         )
 
+        return {"preds": preds, "logits": logits}
+
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)

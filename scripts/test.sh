@@ -30,7 +30,10 @@ fi
 echo "🚀 Testing Model: $MODEL_NAME"
 echo "📂 Version: $VERSION"
 
+RESULTS_DIR=logs/${MODEL_NAME}/${VERSION}/test_results
+mkdir -p $RESULTS_DIR
 python cli/main.py test \
+    --config=configs/test/${MODEL_NAME}.yaml \
     --ckpt_path=logs/${MODEL_NAME}/${VERSION}/checkpoints/best.ckpt \
     --trainer.logger.init_args.name=${MODEL_NAME} \
-    --trainer.logger.init_args.version=${VERSION}
+    --trainer.logger.init_args.version=${VERSION} > ${RESULTS_DIR}/results.txt
