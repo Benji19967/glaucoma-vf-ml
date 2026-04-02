@@ -1,3 +1,5 @@
+import sys
+
 from lightning.pytorch.callbacks import Callback
 
 from glaucoma_vf.plot.plot_hvf import plot_hvf_predictions, print_hvf_ascii
@@ -16,21 +18,26 @@ class HVFPrinter(Callback):
     ):
         # Extract data from the outputs dictionary
         # Squeeze removes the channel dim: (Batch, 1, 8, 9) -> (Batch, 8, 9)
-        x, y_true = batch
-        grids = x.cpu().numpy().squeeze(1)
-        y_trues = y_true.cpu().numpy()
-        y_preds = outputs["preds"].cpu().numpy()  # type: ignore
+        x_grid, y_class, y_mtd, y_grid = batch
 
-        batch_size = len(y_trues)
+        y_grids = y_grid.cpu().numpy().squeeze(1)
+        preds_grids = outputs["pred_grid"].cpu().numpy()  # type: ignore
+
+        y_mtd = y_mtd.cpu().numpy()
+        preds_mtd = outputs["pred_mtd"].cpu().numpy()  # type: ignore
+
+        batch_size = len(y_class)
 
         # Calculate starting index for this batch
         start_idx = batch_idx * batch_size
 
+        print(batch_size)
         for i in range(batch_size):
+            diff_grid = (y_grids[i] - preds_grids[i]).squeeze(0)
             print_hvf_ascii(
-                grid=grids[i],
-                true_label=y_trues[i],
-                pred_label=y_preds[i],
+                grid=diff_grid,
+                true_mtd=y_mtd[i],
+                pred_mtd=preds_mtd[i],
                 sample_idx=start_idx + i,
             )
 

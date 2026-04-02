@@ -105,19 +105,19 @@ class UWHVFDataModule(L.LightningDataModule):
             df = df.with_columns(pl.col(f"Sens_{i}").alias(f"SensPrevious_{i}").shift())
         df = df.remove(pl.col("Time_from_Baseline") == 0.0)
 
-        # Load grids from CSV
-        x_grids = df_to_hvf_grids(df, columns_prefix="SensPrevious_")
-        y_grids = df_to_hvf_grids(df, columns_prefix="Sens_")
+        # Load grids from CSV and normalize
+        x_grids = df_to_hvf_grids(df, columns_prefix="SensPrevious_") / 40
+        y_grids = df_to_hvf_grids(df, columns_prefix="Sens_") / 40
 
-        # Load age from CSV
-        x_age = df.select(cs.by_name("Age")).to_numpy().squeeze()
+        # Load age from CSV and normalize
+        x_age = df.select(cs.by_name("Age")).to_numpy().squeeze() / 100
 
-        # Load years from baseline from CSV
+        # Load years from baseline from CSV and normalize
         x_years_from_baseline = (
-            df.select(cs.by_name("Time_from_Baseline")).to_numpy().squeeze()
+            df.select(cs.by_name("Time_from_Baseline")).to_numpy().squeeze() / 10
         )
 
-        # Compute years since last visit
+        # Compute years since last visit and normalize
         years_from_baseline = df.select(cs.by_name("Time_from_Baseline"))
         x_years_since_last_measurement = (
             years_from_baseline.with_columns(
@@ -126,10 +126,11 @@ class UWHVFDataModule(L.LightningDataModule):
             .fill_null(0)
             .to_numpy()
             .squeeze()
+            / 10
         )
 
-        # Load mtd from CSV
-        y_mtd = df.select(cs.by_name("MTD")).to_numpy().squeeze()
+        # Load mtd from CSV and normalize
+        y_mtd = (df.select(cs.by_name("MTD")).to_numpy().squeeze() + 35) / 35
 
         # Create class labels from mtd
         y_class = map_mtd_to_enum(y_mtd)
