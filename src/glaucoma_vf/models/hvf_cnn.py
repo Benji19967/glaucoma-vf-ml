@@ -1,6 +1,5 @@
-import sys
-
 import lightning as L
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -113,7 +112,7 @@ class HVFSystem(L.LightningModule):
         )
 
         # 1. Compute Losses (for monitoring convergence)
-        loss_curr = F.cross_entropy(out["current_class"], y_class)
+        # loss_curr = F.cross_entropy(out["current_class"], y_class)
         loss_md = F.mse_loss(out["next_md"].squeeze(), y_mtd)
         loss_hvf = F.mse_loss(out["next_hvf"], y_grids)
 

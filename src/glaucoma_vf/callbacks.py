@@ -1,5 +1,3 @@
-import sys
-
 from lightning.pytorch.callbacks import Callback
 
 from glaucoma_vf.plot.plot_hvf import plot_hvf_predictions, print_hvf_ascii
@@ -29,10 +27,16 @@ class HVFPrinter(Callback):
         ) = batch
 
         y_grids = y_grids.cpu().numpy().squeeze(1)
-        preds_grids = outputs["pred_grid"].cpu().numpy()  # type: ignore
+        preds_grids = outputs["pred_grid"].cpu().numpy().squeeze(1)  # type: ignore
 
         y_mtd = y_mtd.cpu().numpy()
         preds_mtd = outputs["pred_mtd"].cpu().numpy()  # type: ignore
+
+        # Un-normalize
+        y_grids *= 40
+        preds_grids *= 40
+        y_mtd = (y_mtd * 35) - 35
+        preds_mtd = (preds_mtd * 35) - 35
 
         batch_size = len(y_class)
 
@@ -40,7 +44,7 @@ class HVFPrinter(Callback):
         start_idx = batch_idx * batch_size
 
         for i in range(batch_size):
-            diff_grid = (y_grids[i] - preds_grids[i]).squeeze(0)
+            diff_grid = y_grids[i] - preds_grids[i]
             print_hvf_ascii(
                 grid=diff_grid,
                 true_mtd=y_mtd[i],
