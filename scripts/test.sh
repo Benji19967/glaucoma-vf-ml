@@ -3,7 +3,7 @@
 MODEL_NAME=$1
 VERSION=$2
 
-DEFAULT_MODEL_NAME=hvf_classifier
+DEFAULT_MODEL_NAME=hvf_system
 
 # 1. Set model name from args or use default
 if [ -z "${MODEL_NAME}" ]; then

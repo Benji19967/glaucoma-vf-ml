@@ -16,21 +16,39 @@ class HVFPrinter(Callback):
     ):
         # Extract data from the outputs dictionary
         # Squeeze removes the channel dim: (Batch, 1, 8, 9) -> (Batch, 8, 9)
-        x, y_true = batch
-        grids = x.cpu().numpy().squeeze(1)
-        y_trues = y_true.cpu().numpy()
-        y_preds = outputs["preds"].cpu().numpy()  # type: ignore
+        (
+            x_grids,
+            x_age,
+            x_years_from_baseline,
+            x_years_since_last_measurement,
+            y_class,
+            y_mtd,
+            y_grids,
+        ) = batch
 
-        batch_size = len(y_trues)
+        y_grids = y_grids.cpu().numpy().squeeze(1)
+        preds_grids = outputs["pred_grid"].cpu().numpy().squeeze(1)  # type: ignore
+
+        y_mtd = y_mtd.cpu().numpy()
+        preds_mtd = outputs["pred_mtd"].cpu().numpy()  # type: ignore
+
+        # Un-normalize
+        y_grids *= 40
+        preds_grids *= 40
+        y_mtd = (y_mtd * 35) - 35
+        preds_mtd = (preds_mtd * 35) - 35
+
+        batch_size = len(y_class)
 
         # Calculate starting index for this batch
         start_idx = batch_idx * batch_size
 
         for i in range(batch_size):
+            diff_grid = y_grids[i] - preds_grids[i]
             print_hvf_ascii(
-                grid=grids[i],
-                true_label=y_trues[i],
-                pred_label=y_preds[i],
+                grid=diff_grid,
+                true_mtd=y_mtd[i],
+                pred_mtd=preds_mtd[i],
                 sample_idx=start_idx + i,
             )
 

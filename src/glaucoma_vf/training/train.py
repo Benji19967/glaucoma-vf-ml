@@ -1,11 +1,13 @@
 import lightning as L
 
 from glaucoma_vf.dataset import UWHVFDataModule
-from glaucoma_vf.models.hvf_cnn_classifier import HVFClassifier
+from glaucoma_vf.models.hvf_cnn import HVFSystem
+from glaucoma_vf.models.hvf_cnn_backbone import HVFCNNBackbone
 
 
 def train():
-    model = HVFClassifier()
+    backbone = HVFCNNBackbone()
+    model = HVFSystem(model=backbone)
     datamodule = UWHVFDataModule()
 
     trainer = L.Trainer(max_epochs=10)

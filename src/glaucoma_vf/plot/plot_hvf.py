@@ -83,9 +83,7 @@ def plot_hvf_predictions(grids, true_labels, pred_labels, n_samples=5):
     plt.show()
 
 
-def print_hvf_ascii(grid, true_label, pred_label, sample_idx):
-    class_map = {0: "Mild", 1: "Mod ", 2: "Seve"}  # Uniform length for alignment
-
+def print_hvf_ascii(grid, true_mtd, pred_mtd, sample_idx):
     # 24-2 Mask (Row, Col)
     # fmt: off
     hvf_coords = set([
@@ -98,9 +96,7 @@ def print_hvf_ascii(grid, true_label, pred_label, sample_idx):
     ])
     # fmt: on
 
-    print(
-        f"\n--- Sample #{sample_idx} | True: {class_map[true_label]} | Pred: {class_map[pred_label]} ---"
-    )
+    print(f"\n--- Sample #{sample_idx} | True: {true_mtd} | Pred: {pred_mtd} ---")
 
     for r in range(8):
         row_str = ""
