@@ -12,6 +12,8 @@ class HVFCNNBackbone(nn.Module):
             nn.ReLU(),
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
             nn.Flatten(),
         )
 

@@ -14,18 +14,21 @@ class HVFSystem(L.LightningModule):
 
         self.backbone = backbone
 
+        num_features_with_temporal = 32 * 8 * 9
+        num_features_with_temporal = num_features_with_temporal + 3
+
         # 1. Classifier Head (Mild/Moderate/Severe)
-        self.classifier = nn.Linear(32 * 8 * 9, num_classes)
+        self.classifier = nn.Linear(num_features_with_temporal, num_classes)
 
         # # 2. Forecast: Class (predicting future stage)
-        # self.forecast_class = nn.Linear(32 * 8 * 9, num_classes)
+        # self.forecast_class = nn.Linear(num_features_with_temporal, num_classes)
 
         # 3. Forecast: Mean Deviation (Regression)
-        self.forecast_md = nn.Linear(32 * 8 * 9, 1)
+        self.forecast_md = nn.Linear(num_features_with_temporal, 1)
 
         # 4. Forecast: Full HVF (8x9 Grid Reconstruction)
         self.forecast_hvf = nn.Sequential(
-            nn.Linear(32 * 8 * 9, 256),
+            nn.Linear(num_features_with_temporal, 256),
             nn.ReLU(),
             nn.Linear(256, 72),  # 8x9 = 72 pixels
             nn.Unflatten(1, (1, 8, 9)),
@@ -44,45 +47,83 @@ class HVFSystem(L.LightningModule):
         self.val_md_metrics = MeanSquaredError()
         self.val_hvf_metrics = MeanSquaredError()
 
-    def forward(self, x):
-        features = self.backbone(x)
+    def forward(
+        self, x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
+    ):
+        # 1. Extract spatial features: Shape [Batch, Num Features]
+        spatial_features = self.backbone(x_grids)
+
+        # 2. Concatenate temporal features: Shape [Batch, Num Features + 3]
+
+        combined = torch.cat(
+            [
+                spatial_features,
+                x_age.unsqueeze(1),
+                x_years_from_baseline.unsqueeze(1),
+                x_years_since_last_measurement.unsqueeze(1),
+            ],
+            dim=1,
+        )
+
         return {
-            "current_class": self.classifier(features),
-            "next_md": self.forecast_md(features),
-            "next_hvf": self.forecast_hvf(features),
+            "current_class": self.classifier(combined),
+            "next_md": self.forecast_md(combined),
+            "next_hvf": self.forecast_hvf(combined),
         }
 
     def training_step(self, batch, batch_idx):
-        x_grid, y_class, y_mtd, y_grid = batch
-        out = self(x_grid)
+        (
+            x_grids,
+            x_age,
+            x_years_from_baseline,
+            x_years_since_last_measurement,
+            y_class,
+            y_mtd,
+            y_grids,
+        ) = batch
+        out = self(
+            x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
+        )
 
         # Calculate individual losses
-        loss_cls = F.cross_entropy(out["current_class"], y_class)
+        # loss_cls = F.cross_entropy(out["current_class"], y_class)
         loss_md = F.mse_loss(out["next_md"].squeeze(), y_mtd)
-        loss_hvf = F.mse_loss(out["next_hvf"], y_grid)
+        loss_hvf = F.mse_loss(out["next_hvf"], y_grids)
 
         # Weighted Total Loss
-        total_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
+        # total_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
+        total_loss = loss_md + loss_hvf
 
         self.log("train/total_loss", total_loss)
         return total_loss
 
     def validation_step(self, batch, batch_idx):
-        x_grid, y_class, y_mtd, y_grid = batch
+        (
+            x_grids,
+            x_age,
+            x_years_from_baseline,
+            x_years_since_last_measurement,
+            y_class,
+            y_mtd,
+            y_grids,
+        ) = batch
 
-        out = self(x_grid)
+        out = self(
+            x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
+        )
 
         # 1. Compute Losses (for monitoring convergence)
         loss_curr = F.cross_entropy(out["current_class"], y_class)
         loss_md = F.mse_loss(out["next_md"].squeeze(), y_mtd)
-        loss_hvf = F.mse_loss(out["next_hvf"], y_grid)
+        loss_hvf = F.mse_loss(out["next_hvf"], y_grids)
 
-        total_val_loss = loss_curr + loss_md + loss_hvf
+        # total_val_loss = loss_curr + loss_md + loss_hvf
+        total_val_loss = loss_md + loss_hvf
 
         # 2. Update Metrics (No need to log every step, just update)
         self.val_cls_metrics(out["current_class"], y_class)
         self.val_md_metrics(out["next_md"].squeeze(), y_mtd)
-        self.val_hvf_metrics(out["next_hvf"], y_grid)
+        self.val_hvf_metrics(out["next_hvf"], y_grids)
 
         # 3. Log Scalars
         self.log_dict(
@@ -106,15 +147,25 @@ class HVFSystem(L.LightningModule):
         self.val_cls_metrics.reset()
 
     def test_step(self, batch, batch_idx):
-        x_grid, y_class, y_mtd, y_grid = batch
-        out = self(x_grid)
+        (
+            x_grids,
+            x_age,
+            x_years_from_baseline,
+            x_years_since_last_measurement,
+            y_class,
+            y_mtd,
+            y_grids,
+        ) = batch
+        out = self(
+            x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
+        )
 
         # We return the predictions for the Callback
         return {
-            "x": x_grid,
+            "x": x_grids,
             "y_class": y_class,
             "y_mtd": y_mtd,
-            "y_grid": y_grid,  # Actual future HVF
+            "y_grid": y_grids,  # Actual future HVF
             "pred_class": out["current_class"].argmax(dim=1),
             "pred_mtd": out["next_md"].squeeze(),
             "pred_grid": out["next_hvf"],  # Predicted future HVF

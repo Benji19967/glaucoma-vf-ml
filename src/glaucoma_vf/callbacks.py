@@ -18,9 +18,17 @@ class HVFPrinter(Callback):
     ):
         # Extract data from the outputs dictionary
         # Squeeze removes the channel dim: (Batch, 1, 8, 9) -> (Batch, 8, 9)
-        x_grid, y_class, y_mtd, y_grid = batch
+        (
+            x_grids,
+            x_age,
+            x_years_from_baseline,
+            x_years_since_last_measurement,
+            y_class,
+            y_mtd,
+            y_grids,
+        ) = batch
 
-        y_grids = y_grid.cpu().numpy().squeeze(1)
+        y_grids = y_grids.cpu().numpy().squeeze(1)
         preds_grids = outputs["pred_grid"].cpu().numpy()  # type: ignore
 
         y_mtd = y_mtd.cpu().numpy()
@@ -31,7 +39,6 @@ class HVFPrinter(Callback):
         # Calculate starting index for this batch
         start_idx = batch_idx * batch_size
 
-        print(batch_size)
         for i in range(batch_size):
             diff_grid = (y_grids[i] - preds_grids[i]).squeeze(0)
             print_hvf_ascii(
