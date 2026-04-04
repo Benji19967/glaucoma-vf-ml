@@ -33,8 +33,12 @@ class ModelOutput(NamedTuple):
 
 
 class HVFSystem(L.LightningModule):
-    def __init__(self, backbone, num_classes=3, learning_rate=1e-3):
+    def __init__(self, backbone, num_classes, learning_rate):
         super().__init__()
+
+        # Saves hyperparameters (params passed in init) to self.hparams
+        # for easy access and logging. They are set in config.yaml and
+        # passed via the CLI.
         self.save_hyperparameters()
 
         self.backbone = backbone
