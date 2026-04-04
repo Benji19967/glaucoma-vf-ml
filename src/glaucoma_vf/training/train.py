@@ -7,7 +7,7 @@ from glaucoma_vf.models.hvf_cnn_backbone import HVFCNNBackbone
 
 def train():
     backbone = HVFCNNBackbone()
-    model = HVFSystem(model=backbone)
+    model = HVFSystem(backbone=backbone)
     datamodule = UWHVFDataModule()
 
     trainer = L.Trainer(max_epochs=10)
