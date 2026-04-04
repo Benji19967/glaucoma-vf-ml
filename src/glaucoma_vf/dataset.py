@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 import torch
 from torch.utils.data import Dataset
 
@@ -6,6 +8,24 @@ from glaucoma_vf.utils import get_git_root
 REPO_ROOT = get_git_root(__file__)
 UWHVF_DIR = REPO_ROOT / "data" / "UWHVF"
 VF_DATA_FILENAME = UWHVF_DIR / "CSV" / "VF_Data.csv"
+
+
+class FeatureSet(TypedDict):
+    grids: torch.Tensor
+    age: torch.Tensor
+    years_since_first: torch.Tensor
+    years_since_last: torch.Tensor
+
+
+class LabelSet(TypedDict):
+    category: torch.Tensor
+    mtd: torch.Tensor
+    grids: torch.Tensor
+
+
+class DatasetItem(TypedDict):
+    X: FeatureSet
+    y: LabelSet
 
 
 class UWHVFDataset(Dataset):
@@ -56,24 +76,26 @@ class UWHVFDataset(Dataset):
     def __len__(self) -> int:
         return len(self.x_grids)
 
-    def __getitem__(self, idx) -> tuple[torch.Tensor, ...]:
+    def __getitem__(self, idx) -> DatasetItem:
         """
         Returns:
-            tuple[torch.Tensor, ...]: A tuple containing:
-                - x_grid: The current 8x9 HVF sensitivity grid
-                  Shape: (1, 8, 9) (C, H, W)
-                - x_age: The age of the patient at measurement
-                  Shape: () (Scalar LongTensor)
-                - x_years_since_first: Years since first measurement
-                  Shape: () (Scalar LongTensor)
-                - x_years_since_last: Years since last measurement
-                  Shape: () (Scalar LongTensor)
-                - y_class: The classification category
-                  Shape: () (Scalar LongTensor)
-                - y_mtd: The mean total deviation
-                  Shape: () (Scalar LongTensor)
-                - y_grid: The next 8x9 HVF sensitivity grid
-                  Shape: (1, 8, 9) (C, H, W)
+            BatchItem: A dictionary containing:
+                - FeatureSet:
+                    - x_grid: The current 8x9 HVF sensitivity grid
+                    Shape: (1, 8, 9) (C, H, W)
+                    - x_age: The age of the patient at measurement
+                    Shape: () (Scalar LongTensor)
+                    - x_years_since_first: Years since first measurement
+                    Shape: () (Scalar LongTensor)
+                    - x_years_since_last: Years since last measurement
+                    Shape: () (Scalar LongTensor)
+                - LabelSet:
+                    - y_class: The classification category
+                    Shape: () (Scalar LongTensor)
+                    - y_mtd: The mean total deviation
+                    Shape: () (Scalar LongTensor)
+                    - y_grid: The next 8x9 HVF sensitivity grid
+                    Shape: (1, 8, 9) (C, H, W)
         """
         x_grid = torch.as_tensor(self.x_grids[idx], dtype=torch.float32).unsqueeze(0)
         x_age = torch.as_tensor(self.x_age[idx].squeeze(), dtype=torch.float32)
@@ -88,12 +110,16 @@ class UWHVFDataset(Dataset):
         y_class = torch.as_tensor(self.y_class[idx].squeeze(), dtype=torch.int16)
         y_mtd = torch.as_tensor(self.y_mtd[idx].squeeze(), dtype=torch.float32)
 
-        return (
-            x_grid,
-            x_age,
-            x_years_since_first,
-            x_years_since_last,
-            y_class,
-            y_mtd,
-            y_grid,
+        return DatasetItem(
+            X=FeatureSet(
+                grids=x_grid,
+                age=x_age,
+                years_since_first=x_years_since_first,
+                years_since_last=x_years_since_last,
+            ),
+            y=LabelSet(
+                category=y_class,
+                mtd=y_mtd,
+                grids=y_grid,
+            ),
         )

@@ -1,5 +1,6 @@
 from lightning.pytorch.callbacks import Callback
 
+from glaucoma_vf.models.hvf_cnn import Batch, FeatureSet, LabelSet, ModelOutput
 from glaucoma_vf.plot.plot_hvf import plot_hvf_predictions, print_hvf_ascii
 
 # See: https://lightning.ai/docs/pytorch/stable/extensions/callbacks.html
@@ -12,25 +13,23 @@ class HVFPrinter(Callback):
         self.test_outputs = {}  # Buffer to hold samples
 
     def on_test_batch_end(
-        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0
+        self,
+        trainer,
+        pl_module,
+        outputs: ModelOutput,
+        batch,
+        batch_idx,
+        dataloader_idx=0,
     ):
-        # Extract data from the outputs dictionary
-        # Squeeze removes the channel dim: (Batch, 1, 8, 9) -> (Batch, 8, 9)
-        (
-            x_grids,
-            x_age,
-            x_years_since_first,
-            x_years_since_last,
-            y_class,
-            y_mtd,
-            y_grids,
-        ) = batch
+        features = FeatureSet(**batch["X"])
+        labels = LabelSet(**batch["y"])
+        batch = Batch(X=features, y=labels)
 
-        y_grids = y_grids.cpu().numpy().squeeze(1)
-        preds_grids = outputs["pred_grid"].cpu().numpy().squeeze(1)  # type: ignore
+        y_grids = batch.y.grids.cpu().numpy().squeeze(1)
+        preds_grids = outputs.next_hvf.cpu().numpy().squeeze(1)
 
-        y_mtd = y_mtd.cpu().numpy()
-        preds_mtd = outputs["pred_mtd"].cpu().numpy()  # type: ignore
+        y_mtd = batch.y.mtd.cpu().numpy()
+        preds_mtd = outputs.next_mtd.cpu().numpy()
 
         # Un-normalize
         y_grids *= 40
@@ -38,7 +37,7 @@ class HVFPrinter(Callback):
         y_mtd = (y_mtd * 35) - 35
         preds_mtd = (preds_mtd * 35) - 35
 
-        batch_size = len(y_class)
+        batch_size = len(batch.y.grids)
 
         # Calculate starting index for this batch
         start_idx = batch_idx * batch_size

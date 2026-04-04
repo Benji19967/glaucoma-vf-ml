@@ -3,7 +3,7 @@ import datetime
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.cli import LightningCLI
 
-from glaucoma_vf.dataset import UWHVFDataModule
+from glaucoma_vf.datamodule import UWHVFDataModule
 from glaucoma_vf.models.hvf_cnn import HVFSystem
 
 default_backbone = {
