@@ -5,6 +5,13 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 
     .
     │
+    ├── cli
+    │   └── main.py             # CLI entrypoint and configs
+    │
+    ├── configs
+    │   └── <model_1>
+    │       └── train.yaml      # Hyperparameters used during training
+    │
     ├── data
     │   ├── GRAPE               # GRAPE dataset
     │   └── UWHVF               # UWHVF dataset
