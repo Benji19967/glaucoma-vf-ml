@@ -57,7 +57,7 @@ python scripts/setup_data.py
 
 ### Training a model (`fit`)
 
-Configure the params in `config/<model_name>.yaml` (create the file when adding new models).
+Configure the params in `config/<model_name>/train.yaml` (create the file when adding new models).
 
 Training the default model:
 ```

@@ -37,7 +37,7 @@ class HVFSystem(L.LightningModule):
         super().__init__()
 
         # Saves hyperparameters (params passed in init) to self.hparams
-        # for easy access and logging. They are set in config.yaml and
+        # for easy access and logging. They are set in train.yaml and
         # passed via the CLI.
         self.save_hyperparameters()
 
