@@ -19,8 +19,8 @@ class HVFPrinter(Callback):
         (
             x_grids,
             x_age,
-            x_years_from_baseline,
-            x_years_since_last_measurement,
+            x_years_since_first,
+            x_years_since_last,
             y_class,
             y_mtd,
             y_grids,

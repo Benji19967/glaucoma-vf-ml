@@ -46,9 +46,7 @@ class HVFSystem(L.LightningModule):
         self.val_md_metrics = MeanSquaredError()
         self.val_hvf_metrics = MeanSquaredError()
 
-    def forward(
-        self, x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
-    ):
+    def forward(self, x_grids, x_age, x_years_since_first, x_years_since_last):
         # 1. Extract spatial features: Shape [Batch, Num Features]
         spatial_features = self.backbone(x_grids)
 
@@ -58,8 +56,8 @@ class HVFSystem(L.LightningModule):
             [
                 spatial_features,
                 x_age.unsqueeze(1),
-                x_years_from_baseline.unsqueeze(1),
-                x_years_since_last_measurement.unsqueeze(1),
+                x_years_since_first.unsqueeze(1),
+                x_years_since_last.unsqueeze(1),
             ],
             dim=1,
         )
@@ -74,15 +72,13 @@ class HVFSystem(L.LightningModule):
         (
             x_grids,
             x_age,
-            x_years_from_baseline,
-            x_years_since_last_measurement,
+            x_years_since_first,
+            x_years_since_last,
             y_class,
             y_mtd,
             y_grids,
         ) = batch
-        out = self(
-            x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
-        )
+        out = self(x_grids, x_age, x_years_since_first, x_years_since_last)
 
         # Calculate individual losses
         # loss_cls = F.cross_entropy(out["current_class"], y_class)
@@ -100,16 +96,14 @@ class HVFSystem(L.LightningModule):
         (
             x_grids,
             x_age,
-            x_years_from_baseline,
-            x_years_since_last_measurement,
+            x_years_since_first,
+            x_years_since_last,
             y_class,
             y_mtd,
             y_grids,
         ) = batch
 
-        out = self(
-            x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
-        )
+        out = self(x_grids, x_age, x_years_since_first, x_years_since_last)
 
         # 1. Compute Losses (for monitoring convergence)
         # loss_curr = F.cross_entropy(out["current_class"], y_class)
@@ -149,15 +143,13 @@ class HVFSystem(L.LightningModule):
         (
             x_grids,
             x_age,
-            x_years_from_baseline,
-            x_years_since_last_measurement,
+            x_years_since_first,
+            x_years_since_last,
             y_class,
             y_mtd,
             y_grids,
         ) = batch
-        out = self(
-            x_grids, x_age, x_years_from_baseline, x_years_since_last_measurement
-        )
+        out = self(x_grids, x_age, x_years_since_first, x_years_since_last)
 
         # We return the predictions for the Callback
         return {
