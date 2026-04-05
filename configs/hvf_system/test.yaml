@@ -2,4 +2,4 @@ trainer:
   callbacks:
     - class_path: glaucoma_vf.callbacks.HVFPrinter
       init_args:
-        message: "End of Epoch Report"
+        display_matplotlib: false

@@ -7,12 +7,12 @@ from glaucoma_vf.plot.plot_hvf import plot_hvf_predictions, print_hvf_ascii
 
 
 class HVFPrinter(Callback):
-    def __init__(self, message: str = "Epoch Finished"):
+    def __init__(self, display_matplotlib: bool):
         super().__init__()
-        self.message = message
+        self.display_matplotlib = display_matplotlib
         self.test_outputs = {}  # Buffer to hold samples
 
-    def on_test_batch_end(
+    def on_test_batch_end(  # type: ignore
         self,
         trainer,
         pl_module,
@@ -25,6 +25,8 @@ class HVFPrinter(Callback):
         labels = LabelSet(**batch["y"])
         batch = Batch(X=features, y=labels)
 
+        x_grids = batch.X.grids.cpu().numpy().squeeze(1)
+
         y_grids = batch.y.grids.cpu().numpy().squeeze(1)
         preds_grids = outputs.next_hvf.cpu().numpy().squeeze(1)
 
@@ -32,6 +34,7 @@ class HVFPrinter(Callback):
         preds_mtd = outputs.next_mtd.cpu().numpy()
 
         # Un-normalize
+        x_grids *= 40
         y_grids *= 40
         preds_grids *= 40
         y_mtd = (y_mtd * 35) - 35
@@ -52,24 +55,23 @@ class HVFPrinter(Callback):
             )
 
         # --- PRINT MATPLOTLIB ---
-        # # Only save the first batch to avoid filling up RAM
-        # # if batch_idx == 0:
-        # x, y_true = batch
-        # # 'outputs' usually contains the logits/preds if you return them in test_step
-        # # If your test_step returns {'loss': loss, 'preds': preds}, access it here:
-        # self.test_outputs = {
-        #     "grids": x.cpu().numpy(),
-        #     "y_true": y_true.cpu().numpy(),
-        #     "y_pred": outputs["preds"].cpu().numpy(),  # type: ignore
-        # }
+        # Only save the first batch to avoid filling up RAM
+        if batch_idx == 0 and self.display_matplotlib:
+            # 'outputs' usually contains the logits/preds if you return them in test_step
+            # If your test_step returns {'loss': loss, 'preds': preds}, access it here:
+            self.test_outputs = {
+                "grids": x_grids,
+                "y_true": batch.y.category.cpu().numpy(),
+                "y_pred": outputs.curr_category.cpu().numpy(),  # type: ignore
+            }
 
-    # def on_test_epoch_end(self, trainer, pl_module):
-    #     if self.test_outputs:
-    #         plot_hvf_predictions(
-    #             self.test_outputs["grids"],
-    #             self.test_outputs["y_true"],
-    #             self.test_outputs["y_pred"],
-    #             n_samples=5,
-    #         )
-    #         # Clear the buffer for the next run
-    #         self.test_outputs = {}
+    def on_test_epoch_end(self, trainer, pl_module):
+        if self.test_outputs:
+            plot_hvf_predictions(
+                self.test_outputs["grids"],
+                self.test_outputs["y_true"],
+                self.test_outputs["y_pred"],
+                n_samples=5,
+            )
+            # Clear the buffer for the next run
+            self.test_outputs = {}
