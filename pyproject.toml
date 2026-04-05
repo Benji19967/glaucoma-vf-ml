@@ -9,6 +9,7 @@ authors = [
 ]
 
 dependencies = [
+    "debugpy>=1.8.20",
     "gitpython>=3.1.46",
     "ipykernel>=7.2.0",
     "lightning[extra]>=2.6.1",

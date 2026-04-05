@@ -32,8 +32,13 @@ echo "📂 Version: $VERSION"
 
 RESULTS_DIR=logs/${MODEL_NAME}/${VERSION}/test_results
 mkdir -p $RESULTS_DIR
+
+# --- DEBUG with VSCode (see .vscode/launch.json)
+# python -m debugpy --listen 5678 --wait-for-client cli/main.py test \
+
 python cli/main.py test \
     --config=configs/${MODEL_NAME}/test.yaml \
     --ckpt_path=logs/${MODEL_NAME}/${VERSION}/checkpoints/best.ckpt \
     --trainer.logger.init_args.name=${MODEL_NAME} \
-    --trainer.logger.init_args.version=${VERSION} > ${RESULTS_DIR}/results.txt
+    --trainer.logger.init_args.version=${VERSION} \
+    > ${RESULTS_DIR}/results.txt

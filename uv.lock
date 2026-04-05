@@ -600,6 +600,7 @@ name = "glaucoma-vf-ml"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "debugpy" },
     { name = "gitpython" },
     { name = "ipykernel" },
     { name = "lightning", extra = ["extra"] },
@@ -620,6 +621,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "debugpy", specifier = ">=1.8.20" },
     { name = "gitpython", specifier = ">=3.1.46" },
     { name = "ipykernel", specifier = ">=7.2.0" },
     { name = "lightning", extras = ["extra"], specifier = ">=2.6.1" },
