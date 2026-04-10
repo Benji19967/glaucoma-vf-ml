@@ -37,8 +37,8 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
     │
     ├── src
     │   └── glaucoma_vf
-    │       ├── models
-    │       └── training
+    │       ├── data            # Datasets and Datamodules
+    │       └── models
     │
     └── README.md
 
