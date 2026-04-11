@@ -19,10 +19,11 @@ class UWHVFDataModule(L.LightningDataModule):
     Prepares the train/val/test Dataloaders
     """
 
-    def __init__(self, batch_size: int = 32):
+    def __init__(self, batch_size: int = 32, num_workers:int=0):
         super().__init__()
         self.csv_path = VF_DATA_FILENAME
         self.batch_size = batch_size
+        self.num_workers=num_workers
 
     def setup(self, stage: str):
         """
@@ -67,13 +68,13 @@ class UWHVFDataModule(L.LightningDataModule):
             self.test_ds = test_set
 
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,persistent_workers=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_ds, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(self.val_ds, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.test_ds, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(self.test_ds, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,persistent_workers=True)
 
     def _split_dataset_by_patient(self, df, x_grids, y_class, full_dataset):
         patient_ids = df.select(pl.col("PatID")).to_numpy().squeeze()

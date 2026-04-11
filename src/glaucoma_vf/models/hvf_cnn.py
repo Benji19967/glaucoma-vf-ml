@@ -100,15 +100,20 @@ class HVFSystem(L.LightningModule):
         batch, out = self._shared_step(batch)
 
         # Calculate individual losses
-        # loss_cls = F.cross_entropy(out["curr_category"], y_class)
+        #loss_cls = F.cross_entropy(out["curr_category"], y_class)
+        loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
 
         # Weighted Total Loss
-        # total_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
-        total_loss = loss_md + loss_hvf
+        total_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
+        # total_loss = loss_md + loss_hvf
 
         self.log("train/total_loss", total_loss)
+        self.log("train/cls_loss", loss_cls)
+        self.log("train/md_loss", loss_md)
+        self.log("train/hvf_loss", loss_hvf)
         return total_loss
 
     def validation_step(self, batch, batch_idx):
@@ -116,11 +121,15 @@ class HVFSystem(L.LightningModule):
 
         # 1. Compute Losses (for monitoring convergence)
         # loss_curr = F.cross_entropy(out["curr_category"], y_class)
+        loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
+        
 
         # total_val_loss = loss_curr + loss_md + loss_hvf
-        total_val_loss = loss_md + loss_hvf
+        #total_val_loss = loss_md + loss_hvf
+        total_val_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
+
 
         # 2. Update Metrics (No need to log every step, just update)
         self.val_cls_metrics(out.curr_category, batch.y.category)
@@ -131,6 +140,7 @@ class HVFSystem(L.LightningModule):
         self.log_dict(
             {
                 "val/total_loss": total_val_loss,
+                "val/cls_loss": loss_cls,
                 "val/md_mse": self.val_md_metrics.compute(),
                 "val/hvf_mse": self.val_hvf_metrics.compute(),
             },
@@ -148,11 +158,24 @@ class HVFSystem(L.LightningModule):
         # Reset for next epoch
         self.val_cls_metrics.reset()
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx): #added the actual accuracy for the testing
         batch, out = self._shared_step(batch)
 
+        # Regression errors
+        loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
+        loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
+        
+        preds = out.curr_category.argmax(dim=1)
+        acc = (preds == batch.y.category.long()).float().mean()
+        
+        self.log("test/md_mse", loss_md)
+        self.log("test/hvf_mse", loss_hvf)
+        self.log("test/cls_acc", acc, prog_bar=True)
+
+
         return ModelOutput(
-            curr_category=out.curr_category.argmax(dim=1),
+            #curr_category=out.curr_category.argmax(dim=1),
+            curr_category=preds,
             next_mtd=out.next_mtd.squeeze(),
             next_hvf=out.next_hvf,
         )

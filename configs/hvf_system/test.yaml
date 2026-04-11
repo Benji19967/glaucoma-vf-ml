@@ -3,3 +3,15 @@ trainer:
     - class_path: glaucoma_vf.callbacks.HVFPrinter
       init_args:
         display_matplotlib: false
+
+model:
+  num_classes: 3
+  learning_rate: 0.0 #dummy value
+data:
+  batch_size: 32
+  num_workers: 4
+trainer:
+  callbacks:
+    - class_path: glaucoma_vf.callbacks.HVFPrinter
+      init_args:
+        display_matplotlib: false
