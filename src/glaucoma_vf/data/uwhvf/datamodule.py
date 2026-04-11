@@ -5,7 +5,7 @@ import torch
 from sklearn.model_selection import GroupShuffleSplit
 from torch.utils.data import DataLoader
 
-from glaucoma_vf.data.data_utils import df_to_hvf_grids, map_mtd_to_enum
+from glaucoma_vf.data.data_utils import df_to_hvf_grids_uwhvf, map_mtd_to_enum
 from glaucoma_vf.data.uwhvf.dataset import UWHVFDataset
 from glaucoma_vf.utils import get_git_root
 
@@ -143,8 +143,8 @@ class UWHVFDataModule(L.LightningDataModule):
         return x_age
 
     def _get_normalized_grids(self, df):
-        x_grids = df_to_hvf_grids(df, columns_prefix="SensPrevious_") / 40
-        y_grids = df_to_hvf_grids(df, columns_prefix="Sens_") / 40
+        x_grids = df_to_hvf_grids_uwhvf(df, columns_prefix="SensPrevious_") / 40
+        y_grids = df_to_hvf_grids_uwhvf(df, columns_prefix="Sens_") / 40
         return x_grids, y_grids
 
     def _add_shifted_grids(self, df):

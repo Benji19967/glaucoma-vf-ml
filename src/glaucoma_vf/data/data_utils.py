@@ -5,7 +5,7 @@ import polars.selectors as cs
 from glaucoma_vf.enums import GlaucomaSeverity
 
 
-def df_to_hvf_grids(
+def df_to_hvf_grids_uwhvf(
     df: pl.DataFrame, columns_prefix: str = "Sens_", fill_value: float = 100.0
 ) -> np.ndarray:
     """
@@ -43,6 +43,41 @@ def df_to_hvf_grids(
     stack[:, rows, cols] = data_54
 
     return stack
+
+
+# TODO
+def df_to_hvf_grids_grape(df: pl.DataFrame, fill_value: float = 100.0) -> np.ndarray:
+    """
+    Converts a Polars DataFrame of 61 columns into a 3D NumPy array (N, 10, 10).
+    """
+    # Load VFs
+    cols_to_load = ["VF"] + [str(i) for i in range(5, 65)]
+    data_61 = df.select(cols_to_load)
+
+    # Initialize with -1 (the dataset's value for 'unseen' or 'blind')
+    grid = np.full((10, 10), -1.0)
+
+    # Mapping Dictionary: index_data_61-> (row, col)
+    # This approximates the G1 spiral coordinates into 6-degree bins
+    # fmt: off
+    #
+    # TODO
+    #
+    # fmt: on
+
+    # Logic to handle multiple points falling into the same cell
+    counts = np.zeros((10, 10))
+    for i, val in enumerate(data_61):
+        if i in mapping:
+            r, c = mapping[i]
+            if grid[r, c] == -1:
+                grid[r, c] = val
+            else:
+                # Average the values for dense central points
+                grid[r, c] = (grid[r, c] * counts[r, c] + val) / (counts[r, c] + 1)
+            counts[r, c] += 1
+
+    return grid
 
 
 def map_mtd_to_enum(mtd_array: np.ndarray) -> np.ndarray:
