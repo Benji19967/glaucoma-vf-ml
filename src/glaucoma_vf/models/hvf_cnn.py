@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torchmetrics import Accuracy, F1Score, MeanSquaredError, MetricCollection
+from torchmetrics import F1Score, ConfusionMatrix
 
 
 class FeatureSet(NamedTuple):
@@ -166,11 +167,19 @@ class HVFSystem(L.LightningModule):
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
         
         preds = out.curr_category.argmax(dim=1)
+        labels = batch.y.category.long()
         acc = (preds == batch.y.category.long()).float().mean()
         
         self.log("test/md_mse", loss_md)
         self.log("test/hvf_mse", loss_hvf)
         self.log("test/cls_acc", acc, prog_bar=True)
+        
+        #accuracy per class, bcz since most cases are Mild, the model says it performs good but is actually shit at detecting other classes (aka. accuracy paradox)
+        for cls in range(3):
+            mask = labels == cls
+            if mask.sum() > 0:
+                cls_acc = (preds[mask] == labels[mask]).float().mean()
+                self.log(f"test/cls_acc_{cls}", cls_acc)
 
 
         return ModelOutput(
