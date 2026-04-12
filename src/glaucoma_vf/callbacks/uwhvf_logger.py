@@ -1,7 +1,7 @@
 from lightning.pytorch.callbacks import Callback
 
 from glaucoma_vf.models.hvf_cnn import Batch, FeatureSet, LabelSet, ModelOutput
-from glaucoma_vf.plot.plot_hvf import plot_hvf_predictions, print_hvf_ascii
+from glaucoma_vf.plot.uwhvf_plot import plot_hvf_predictions, print_hvf_ascii
 
 # See: https://lightning.ai/docs/pytorch/stable/extensions/callbacks.html
 

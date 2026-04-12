@@ -37,8 +37,8 @@ class GRAPEDataset(Dataset):
         """
         Args:
             x_grids (`np.array`):
-                Humphrey Visual Field grids.
-                Shape: (N, 8, 9) where 1 is the single-channel
+                Visual Field grids.
+                Shape: (N, 61, 61) where 1 is the single-channel
                 sensitivity map.
         """
         self.x_grids = x_grids
@@ -52,11 +52,11 @@ class GRAPEDataset(Dataset):
         Returns:
             BatchItem: A dictionary containing:
                 - FeatureSet:
-                    - x_grid: The current 8x9 HVF sensitivity grid
-                    Shape: (1, 8, 9) (C, H, W)
+                    - x_grid: The current 61x61 VF sensitivity grid
+                    Shape: (1, 61, 61) (C, H, W)
                 - LabelSet:
-                    - y_grid: The next 8x9 HVF sensitivity grid
-                    Shape: (1, 8, 9) (C, H, W)
+                    - y_grid: The next 61x61 VF sensitivity grid
+                    Shape: (1, 61, 61) (C, H, W)
         """
         x_grid = torch.as_tensor(self.x_grids[idx], dtype=torch.float32).unsqueeze(0)
         y_grid = torch.as_tensor(self.y_grids[idx], dtype=torch.float32).unsqueeze(0)

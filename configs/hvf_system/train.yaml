@@ -1,7 +1,21 @@
 model:
-  num_classes: 3
-  learning_rate: 0.001
+  class_path: glaucoma_vf.models.hvf_cnn.HVFSystem
+  init_args:
+    num_classes: 3
+    learning_rate: 0.001
+    backbone:
+        class_path: glaucoma_vf.models.hvf_cnn_backbone.HVFCNNBackbone
 data:
-  batch_size: 32
+  class_path: glaucoma_vf.data.uwhvf.datamodule.UWHVFDataModule
+  init_args:
+    batch_size: 32
 trainer:
   max_epochs: 3
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        monitor: "val/curr_f1"
+        mode: "max"
+        save_top_k: 1
+        save_last: True
+        filename: "best"

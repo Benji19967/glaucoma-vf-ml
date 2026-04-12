@@ -28,7 +28,7 @@ class GRAPEDataModule(L.LightningDataModule):
         """
         Create the train/val/test datasets from the CSV file.
         """
-        df_baseline = self._load_df(VF_DATA_BASELINE_SHEET)
+        df_baseline = self._load_df(sheet_name=VF_DATA_BASELINE_SHEET)
 
         # (N, 61, 61)
         x_grids = self._get_normalized_grids(df_baseline)
@@ -84,7 +84,7 @@ class GRAPEDataModule(L.LightningDataModule):
         return x_grids
 
     def _load_df(self, sheet_name: str):
-        pl.read_excel(
+        return pl.read_excel(
             self.xlsx_path,
             sheet_name=sheet_name,
             read_options={"skip_rows_after_header": 1},

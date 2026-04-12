@@ -1,5 +1,5 @@
 trainer:
   callbacks:
-    - class_path: glaucoma_vf.callbacks.HVFPrinter
+    - class_path: glaucoma_vf.callbacks.uwhvf_logger.HVFLogger
       init_args:
         display_matplotlib: false

@@ -1,19 +1,7 @@
 import datetime
 
-from lightning.pytorch.callbacks import ModelCheckpoint
+import lightning as L
 from lightning.pytorch.cli import LightningCLI
-
-from glaucoma_vf.data.uwhvf.datamodule import UWHVFDataModule
-from glaucoma_vf.models.hvf_cnn import HVFSystem
-
-default_backbone = {
-    "class_path": "glaucoma_vf.models.hvf_cnn_backbone.HVFCNNBackbone",
-}
-
-
-class MyLightningCLI(LightningCLI):
-    def add_arguments_to_parser(self, parser):
-        parser.set_defaults({"model.backbone": default_backbone})
 
 
 def cli_main():
@@ -23,20 +11,13 @@ def cli_main():
     name = "hvf_system"
     version = f"v_{timestamp}"
 
-    cli = MyLightningCLI(
-        model_class=HVFSystem,
-        datamodule_class=UWHVFDataModule,
+    cli = LightningCLI(
+        model_class=L.LightningModule,
+        datamodule_class=L.LightningDataModule,
+        subclass_mode_model=True,  # Now we allow swapping the whole system
+        subclass_mode_data=True,
         save_config_kwargs={"overwrite": True},
         trainer_defaults={
-            "callbacks": [
-                ModelCheckpoint(
-                    monitor="val/curr_f1",
-                    mode="max",
-                    save_top_k=1,
-                    save_last=True,
-                    filename="best",
-                )
-            ],
             "logger": {
                 "class_path": "lightning.pytorch.loggers.TensorBoardLogger",
                 "init_args": {

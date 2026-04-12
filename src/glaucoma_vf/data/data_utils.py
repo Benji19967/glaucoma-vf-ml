@@ -8,7 +8,7 @@ from glaucoma_vf.utils import get_git_root
 REPO_ROOT = get_git_root(__file__)
 GRAPE_DIR = REPO_ROOT / "data" / "GRAPE"
 ASSETS_DIR = REPO_ROOT / "assets"
-MASTER_LOOKUP_FILENAME = ASSETS_DIR / "master_lookup_61.npy"
+MASTER_LOOKUP_FILENAME = ASSETS_DIR / "grape_master_lookup_61.npy"
 TRAINING_MASK_FILENAME = ASSETS_DIR / "grape_training_mask_61.npy"
 
 
@@ -58,7 +58,7 @@ def df_to_vf_grids_grape(df: pl.DataFrame) -> np.ndarray:
     """
     # Load VFs
     cols_to_load = ["VF"] + [str(i) for i in range(5, 65)]
-    data_61 = df.select(cols_to_load)
+    data_61 = df.select(cols_to_load).to_numpy().astype(np.float32)
 
     # 1. Ensure master_lookup is a 61x61 numpy array of integers
     # master_lookup should contain values from 0 to 60 (which of
