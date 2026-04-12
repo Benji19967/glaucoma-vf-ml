@@ -45,7 +45,11 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 ## Project Overview
 | Task | Model | Input | Status |
 | :--- | :--- | :--- | :--- |
-| [Glaucoma classification](./docs/task1_hvf_system.md) | CNN | 54-point HVF | in progress |
+|[Task 1: VF Denoiser (Variability)](./docs/task1_denoiser.md) | GenViT | 54-point HVF | planned |
+| [Task 2: Glaucoma Classification](./docs/task2_hvf_system.md) | Multi-task CNN | 54-point HVF + Temporal | done |
+| [Task 3: Unimodal Forecasting](./docs/task3_forecasting.md) | Multi-task CNN / U-ViT | 54-point HVF + Temporal | done |
+| [Task 4: Cross-modal Inference](./docs/task4_inference.md) | U-ViT | Optic Disk Image (CFP) | planned |
+|[Task 5: Multimodal Forecasting](./docs/task5_multimodal.md) | U-ViT | 54-point HVF + Optic Disk Image | planned |
 
 ## Running locally
 
