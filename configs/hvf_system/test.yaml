@@ -1,17 +1,12 @@
-trainer:
-  callbacks:
-    - class_path: glaucoma_vf.callbacks.HVFPrinter
-      init_args:
-        display_matplotlib: false
-
 model:
-  num_classes: 3
-  learning_rate: 0.0 #dummy value
+  class_path: glaucoma_vf.models.hvf_cnn.HVFSystem
 data:
-  batch_size: 32
-  num_workers: 4
+  class_path: glaucoma_vf.data.uwhvf.datamodule.UWHVFDataModule
+  init_args:
+    batch_size: 32
+    num_workers: 4
 trainer:
   callbacks:
-    - class_path: glaucoma_vf.callbacks.HVFPrinter
+    - class_path: glaucoma_vf.callbacks.uwhvf_logger.UWHVFLogger
       init_args:
-        display_matplotlib: false
+        display_matplotlib: True

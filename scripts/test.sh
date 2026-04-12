@@ -1,4 +1,4 @@
-./scripts/test.sh hvf_system v_20260331_122923tensorboard --logdir .#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 MODEL_NAME=$1
 VERSION=$2

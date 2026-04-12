@@ -1,0 +1,16 @@
+model:
+  class_path: glaucoma_vf.models.dummy_grape_vf_model.DummyVFModel
+data:
+  class_path: glaucoma_vf.data.grape.datamodule.GRAPEDataModule
+  init_args:
+    batch_size: 32
+trainer:
+  max_epochs: 3
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      monitor: "val/loss"
+      mode: "min"
+      save_top_k: 1
+      save_last: True
+      filename: "best"

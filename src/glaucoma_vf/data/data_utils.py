@@ -3,9 +3,16 @@ import polars as pl
 import polars.selectors as cs
 
 from glaucoma_vf.enums import GlaucomaSeverity
+from glaucoma_vf.utils import get_git_root
+
+REPO_ROOT = get_git_root(__file__)
+GRAPE_DIR = REPO_ROOT / "data" / "GRAPE"
+ASSETS_DIR = REPO_ROOT / "assets"
+MASTER_LOOKUP_FILENAME = ASSETS_DIR / "grape_master_lookup_61.npy"
+TRAINING_MASK_FILENAME = ASSETS_DIR / "grape_training_mask_61.npy"
 
 
-def df_to_hvf_grids(
+def df_to_hvf_grids_uwhvf(
     df: pl.DataFrame, columns_prefix: str = "Sens_", fill_value: float = 100.0
 ) -> np.ndarray:
     """
@@ -43,6 +50,31 @@ def df_to_hvf_grids(
     stack[:, rows, cols] = data_54
 
     return stack
+
+
+def df_to_vf_grids_grape(df: pl.DataFrame) -> np.ndarray:
+    """
+    Converts a Polars DataFrame of (N, 61) into a 3D NumPy array (N, 61, 61).
+    """
+    # Load VFs
+    cols_to_load = ["VF"] + [str(i) for i in range(5, 65)]
+    data_61 = df.select(cols_to_load).to_numpy().astype(np.float32)
+
+    # 1. Ensure master_lookup is a 61x61 numpy array of integers
+    # master_lookup should contain values from 0 to 60 (which of
+    # the 61 cells does each pixel--of the 61x61 image--belong to).
+    master_lookup = np.load(MASTER_LOOKUP_FILENAME).astype(int)
+    training_mask = np.load(TRAINING_MASK_FILENAME).astype(int)
+
+    # 2. Perform the mapping
+    # NumPy indexing magic: this creates (N, 61, 61)
+    data_grid = data_61[:, master_lookup]
+
+    # 3. Apply the Eye Mask (Zero out the corners)
+    # training_mask should be a (61, 61) array of 1s and 0s
+    data_grid = data_grid * training_mask
+
+    return data_grid
 
 
 def map_mtd_to_enum(mtd_array: np.ndarray) -> np.ndarray:
