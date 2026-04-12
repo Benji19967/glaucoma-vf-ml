@@ -6,7 +6,11 @@ from glaucoma_vf.plot.plot_hvf import plot_hvf_predictions, print_hvf_ascii
 # See: https://lightning.ai/docs/pytorch/stable/extensions/callbacks.html
 
 
-class HVFPrinter(Callback):
+class UWHVFLogger(Callback):
+    """
+    Logs Visual Fields from the UWHVF dataset.
+    """
+
     def __init__(self, display_matplotlib: bool):
         super().__init__()
         self.display_matplotlib = display_matplotlib

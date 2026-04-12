@@ -3,6 +3,13 @@ import polars as pl
 import polars.selectors as cs
 
 from glaucoma_vf.enums import GlaucomaSeverity
+from glaucoma_vf.utils import get_git_root
+
+REPO_ROOT = get_git_root(__file__)
+GRAPE_DIR = REPO_ROOT / "data" / "GRAPE"
+ASSETS_DIR = REPO_ROOT / "assets"
+MASTER_LOOKUP_FILENAME = ASSETS_DIR / "master_lookup_61.npy"
+TRAINING_MASK_FILENAME = ASSETS_DIR / "grape_training_mask_61.npy"
 
 
 def df_to_hvf_grids_uwhvf(
@@ -45,39 +52,29 @@ def df_to_hvf_grids_uwhvf(
     return stack
 
 
-# TODO
-def df_to_hvf_grids_grape(df: pl.DataFrame, fill_value: float = 100.0) -> np.ndarray:
+def df_to_vf_grids_grape(df: pl.DataFrame) -> np.ndarray:
     """
-    Converts a Polars DataFrame of 61 columns into a 3D NumPy array (N, 10, 10).
+    Converts a Polars DataFrame of (N, 61) into a 3D NumPy array (N, 61, 61).
     """
     # Load VFs
     cols_to_load = ["VF"] + [str(i) for i in range(5, 65)]
     data_61 = df.select(cols_to_load)
 
-    # Initialize with -1 (the dataset's value for 'unseen' or 'blind')
-    grid = np.full((10, 10), -1.0)
+    # 1. Ensure master_lookup is a 61x61 numpy array of integers
+    # master_lookup should contain values from 0 to 60 (which of
+    # the 61 cells does each pixel--of the 61x61 image--belong to).
+    master_lookup = np.load(MASTER_LOOKUP_FILENAME).astype(int)
+    training_mask = np.load(TRAINING_MASK_FILENAME).astype(int)
 
-    # Mapping Dictionary: index_data_61-> (row, col)
-    # This approximates the G1 spiral coordinates into 6-degree bins
-    # fmt: off
-    #
-    # TODO
-    #
-    # fmt: on
+    # 2. Perform the mapping
+    # NumPy indexing magic: this creates (N, 61, 61)
+    data_grid = data_61[:, master_lookup]
 
-    # Logic to handle multiple points falling into the same cell
-    counts = np.zeros((10, 10))
-    for i, val in enumerate(data_61):
-        if i in mapping:
-            r, c = mapping[i]
-            if grid[r, c] == -1:
-                grid[r, c] = val
-            else:
-                # Average the values for dense central points
-                grid[r, c] = (grid[r, c] * counts[r, c] + val) / (counts[r, c] + 1)
-            counts[r, c] += 1
+    # 3. Apply the Eye Mask (Zero out the corners)
+    # training_mask should be a (61, 61) array of 1s and 0s
+    data_grid = data_grid * training_mask
 
-    return grid
+    return data_grid
 
 
 def map_mtd_to_enum(mtd_array: np.ndarray) -> np.ndarray:

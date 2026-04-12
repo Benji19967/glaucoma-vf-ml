@@ -22,6 +22,7 @@ dependencies = [
     "polars[excel]>=1.39.2",
     "requests>=2.32.5",
     "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
     "seaborn>=0.13.2",
     "setuptools==80.8.0",
     "tensorboard>=2.20.0",
