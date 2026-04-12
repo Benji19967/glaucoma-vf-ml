@@ -5,6 +5,8 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 
     .
     │
+    ├── assets                  # Assets to facilitate plotting GRAPE VFs
+    │
     ├── cli
     │   └── main.py             # CLI entrypoint and configs
     │
@@ -37,8 +39,10 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
     │
     ├── src
     │   └── glaucoma_vf
+    │       ├── callbacks       # Visual field loggers
     │       ├── data            # Datasets and Datamodules
-    │       └── models
+    │       ├── models          # Various DL models
+    │       └── plot            # Utils to plot visual fields
     │
     └── README.md
 
@@ -47,7 +51,7 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 | :--- | :--- | :--- | :--- |
 |[Task 1: VF Denoiser (Variability)](./docs/task1_denoiser.md) | GenViT | 54-point HVF | planned |
 | [Task 2: Glaucoma Classification](./docs/task2_hvf_system.md) | Multi-task CNN | 54-point HVF + Temporal | done |
-| [Task 3: Unimodal Forecasting](./docs/task3_forecasting.md) | Multi-task CNN / U-ViT | 54-point HVF + Temporal | done |
+| [Task 3: Unimodal Forecasting](./docs/task3_forecasting.md) | Multi-task CNN / U-ViT | 54-point HVF + Temporal | planned |
 | [Task 4: Cross-modal Inference](./docs/task4_inference.md) | U-ViT | Optic Disk Image (CFP) | planned |
 |[Task 5: Multimodal Forecasting](./docs/task5_multimodal.md) | U-ViT | 54-point HVF + Optic Disk Image | planned |
 
