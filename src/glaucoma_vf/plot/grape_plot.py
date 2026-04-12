@@ -14,7 +14,7 @@ def plot_grape_predictions(x_grids, y_grids, preds_grids, n_samples=5):
     preds_grids = preds_grids.cpu().numpy()
 
     # (61, 61)
-    preds_grid = preds_grids[1]
+    preds_grid = preds_grids[0]
 
     # Ungrid: (61, 61) -> (61,)
     master_lookup = np.load(MASTER_LOOKUP_FILENAME).astype(int)
@@ -61,35 +61,47 @@ def create_highres_lookup(coords_deg, resolution=500):
 
 
 def plot(preds, smooth_mask, master_lookup_highres, idx=5):
-    # --- How to display it ---
-    # Use 'interpolation=lanczos' or 'bicubic' for the smoothest visual output
     cmap = plt.get_cmap("RdYlGn").copy()
     cmap.set_under("white")
     p_min = preds.min()
     p_max = preds.max()
-    plt.imshow(
-        get_smooth_vf_plot(smooth_mask, preds, master_lookup_highres),
+
+    img = get_smooth_vf_plot(smooth_mask, preds, master_lookup_highres)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    im = ax.imshow(
+        img,
         cmap=cmap,
         vmin=p_min,
         vmax=p_max,
         origin="upper",
+        # Use 'interpolation=lanczos' or 'bicubic' for the smoothest visual output
         interpolation="lanczos",
     )
+    # Add the Colorbar
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.05)
+    cbar.set_label("Sensitivity (dB)", rotation=270, labelpad=15, fontweight="bold")
+
+    # Optional: Set specific tick marks
+    cbar.set_ticks(np.linspace(0, int(p_max), 5))  # type: ignore
+
+    plt.title("Visual Field Prediction", pad=20)
     plt.axis("off")  # Hide the pixel coordinates for a cleaner look
     plt.show()
 
 
 def get_smooth_vf_plot(smooth_mask, preds, master_lookup_highres):
+    WHITE = -999
     # 1. Map values to high-res grid (e.g., 500x500)
     # This ensures the tiles don't look 'blocky' at the edges
     high_res_img = preds[master_lookup_highres]
 
     # 2. Apply negative values to the background
     # Logic: If mask is 1, keep img. If mask is 0, set to neg_value.
-    final_viz = np.where(smooth_mask > 0.5, high_res_img, -1)
+    final_viz = np.where(smooth_mask > 0.5, high_res_img, WHITE)
 
     # Add edges to voronoi cells
     edges = np.abs(np.gradient(master_lookup_highres)).sum(axis=0) > 0
-    final_viz[edges] = -1
+    final_viz[edges] = WHITE
 
     return final_viz
