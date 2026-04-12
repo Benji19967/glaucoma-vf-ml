@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torchmetrics import Accuracy, F1Score, MeanSquaredError, MetricCollection
+from torchmetrics import F1Score, ConfusionMatrix
 
 
 class FeatureSet(NamedTuple):
@@ -100,15 +101,32 @@ class HVFSystem(L.LightningModule):
         batch, out = self._shared_step(batch)
 
         # Calculate individual losses
-        # loss_cls = F.cross_entropy(out["curr_category"], y_class)
+        #loss_cls = F.cross_entropy(out["curr_category"], y_class)
+        
+        # weight inversely proportional to class frequency because of imbalanced data affecting classifier accuracy
+        # Mild: 13015, Moderate: 4722, Severe: 3778
+        #class_weights = torch.tensor([1.0, 2.76, 3.44], device=self.device) removed for focal loss
+        
+        #---cross entropy---
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long(), weight=class_weights)
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+        # ---
+        
+        #---focal loss---
+        loss_cls = self._focal_loss(out.curr_category, batch.y.category.long())
+        # ---
+
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
 
         # Weighted Total Loss
-        # total_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
-        total_loss = loss_md + loss_hvf
+        total_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
+        # total_loss = loss_md + loss_hvf
 
         self.log("train/total_loss", total_loss)
+        self.log("train/cls_loss", loss_cls)
+        self.log("train/md_loss", loss_md)
+        self.log("train/hvf_loss", loss_hvf)
         return total_loss
 
     def validation_step(self, batch, batch_idx):
@@ -116,11 +134,26 @@ class HVFSystem(L.LightningModule):
 
         # 1. Compute Losses (for monitoring convergence)
         # loss_curr = F.cross_entropy(out["curr_category"], y_class)
+        
+        #same
+        # Weight inversely proportional to class frequency
+        # Mild: 13015, Moderate: 4722, Severe: 3778
+        #class_weights = torch.tensor([1.0, 2.76, 3.44], device=self.device) removed for focal loss
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long(), weight=class_weights)
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+        
+        #---focal loss---
+        loss_cls = self._focal_loss(out.curr_category, batch.y.category.long())
+        # ---
+        
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
+        
 
         # total_val_loss = loss_curr + loss_md + loss_hvf
-        total_val_loss = loss_md + loss_hvf
+        #total_val_loss = loss_md + loss_hvf
+        total_val_loss = loss_cls + (0.5 * loss_md) + (2.0 * loss_hvf)
+
 
         # 2. Update Metrics (No need to log every step, just update)
         self.val_cls_metrics(out.curr_category, batch.y.category)
@@ -131,6 +164,7 @@ class HVFSystem(L.LightningModule):
         self.log_dict(
             {
                 "val/total_loss": total_val_loss,
+                "val/cls_loss": loss_cls,
                 "val/md_mse": self.val_md_metrics.compute(),
                 "val/hvf_mse": self.val_hvf_metrics.compute(),
             },
@@ -148,11 +182,39 @@ class HVFSystem(L.LightningModule):
         # Reset for next epoch
         self.val_cls_metrics.reset()
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx): #added the actual accuracy for the testing
         batch, out = self._shared_step(batch)
 
+        # Regression errors
+        loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
+        loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
+        self.log("test/md_mse", loss_md)
+        self.log("test/hvf_mse", loss_hvf)
+    
+
+        labels = batch.y.category.long()
+
+        #classifier
+        preds = out.curr_category.argmax(dim=1)
+        #labels = batch.y.category.long()
+        #acc = (preds == batch.y.category.long()).float().mean()
+        acc = (preds == labels).float().mean()
+        
+        self.log("test/md_mse", loss_md)
+        self.log("test/hvf_mse", loss_hvf)
+        self.log("test/cls_acc", acc, prog_bar=True)
+        
+        #accuracy per class, bcz since most cases are Mild, the model says it performs good but is actually shit at detecting other classes (aka. accuracy paradox)
+        for cls in range(3):
+            mask = labels == cls
+            if mask.sum() > 0:
+                cls_acc = (preds[mask] == labels[mask]).float().mean()
+                self.log(f"test/cls_acc_{cls}", cls_acc)
+
+
         return ModelOutput(
-            curr_category=out.curr_category.argmax(dim=1),
+            #curr_category=out.curr_category.argmax(dim=1),
+            curr_category=preds,
             next_mtd=out.next_mtd.squeeze(),
             next_hvf=out.next_hvf,
         )
@@ -168,3 +230,11 @@ class HVFSystem(L.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)  # type: ignore
+
+
+    def _focal_loss(self, logits, targets, gamma=2.0): #focal loss replaces cross entropy loss:  dynamically adjusts based on how confident the model is. If the model easily predicts a "Mild" case (high confidence), it reduces the loss to near zero
+        class_weights = torch.tensor([1.0, 2.76, 3.44], device=self.device)
+        ce_loss = F.cross_entropy(logits, targets, weight=class_weights, reduction="none")
+        pt = torch.exp(-ce_loss)
+        focal_loss = ((1 - pt) ** gamma) * ce_loss
+        return focal_loss.mean()

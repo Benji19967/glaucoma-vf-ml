@@ -1,5 +1,6 @@
 /data/
 logs/
+lightning_logs/
 hvf_sandbox/
 *.sif
 .vscode/
@@ -216,3 +217,7 @@ __marimo__/
 #DATASETS FOLDERS
 /uwhvf
 /datasets
+
+
+#test output for terminal command: run CNN test & specify path: e.g.: python cli/main.py test --config configs/hvf_system/test.yaml --ckpt_path "logs/hvf_system/v_20260411_151943/checkpoints/best.ckpt"
+test_output.txt

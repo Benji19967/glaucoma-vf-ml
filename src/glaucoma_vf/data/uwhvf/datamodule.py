@@ -4,6 +4,9 @@ import polars.selectors as cs
 import torch
 from sklearn.model_selection import GroupShuffleSplit
 from torch.utils.data import DataLoader
+import sys
+import numpy as np
+
 
 from glaucoma_vf.data.data_utils import df_to_hvf_grids_uwhvf, map_mtd_to_enum
 from glaucoma_vf.data.uwhvf.dataset import UWHVFDataset
@@ -19,10 +22,11 @@ class UWHVFDataModule(L.LightningDataModule):
     Prepares the train/val/test Dataloaders
     """
 
-    def __init__(self, batch_size: int = 32):
+    def __init__(self, batch_size: int = 32, num_workers:int=0):
         super().__init__()
         self.csv_path = VF_DATA_FILENAME
         self.batch_size = batch_size
+        self.num_workers=num_workers
 
     def setup(self, stage: str):
         """
@@ -37,10 +41,9 @@ class UWHVFDataModule(L.LightningDataModule):
         x_age = self._get_normalized_age(df)
         x_years_since_first = self._get_normalized_years_since_first(df)
         x_years_since_last = self._get_normalized_years_since_last(df)
-        y_mtd = self._get_normalized_mtd(df)
-
-        # Create class labels from mtd
-        y_class = map_mtd_to_enum(y_mtd)
+        y_mtd_raw = df.select(cs.by_name("MTD")).to_numpy().squeeze()
+        y_class = map_mtd_to_enum(y_mtd_raw) #create class labels
+        y_mtd = (y_mtd_raw + 35) / 35 #normalize for regression
 
         full_dataset = UWHVFDataset(
             x_grids,
@@ -55,6 +58,11 @@ class UWHVFDataModule(L.LightningDataModule):
         train_set, val_set, test_set = self._split_dataset_by_patient(
             df, x_grids, y_class, full_dataset
         )
+        
+        # to see the class distribution
+        unique, counts = np.unique(y_class, return_counts=True)
+        print("Class distribution:", dict(zip(unique, counts)), flush=True)
+        sys.stdout.flush()
 
         if stage == "fit":
             self.train_ds = train_set
@@ -67,13 +75,13 @@ class UWHVFDataModule(L.LightningDataModule):
             self.test_ds = test_set
 
     def train_dataloader(self):
-        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,persistent_workers=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_ds, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(self.val_ds, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.test_ds, batch_size=self.batch_size, shuffle=False)
+        return DataLoader(self.test_ds, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers,persistent_workers=True)
 
     def _split_dataset_by_patient(self, df, x_grids, y_class, full_dataset):
         patient_ids = df.select(pl.col("PatID")).to_numpy().squeeze()

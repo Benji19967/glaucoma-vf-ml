@@ -4,6 +4,7 @@ data:
   class_path: glaucoma_vf.data.uwhvf.datamodule.UWHVFDataModule
   init_args:
     batch_size: 32
+    num_workers: 4
 trainer:
   callbacks:
     - class_path: glaucoma_vf.callbacks.uwhvf_logger.UWHVFLogger
