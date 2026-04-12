@@ -5,4 +5,9 @@ data:
   batch_size: 32
   num_workers: 4
 trainer:
-  max_epochs: 10 #10 suffice for the cnn classifier
+  max_epochs: 70
+  logger:
+    class_path: lightning.pytorch.loggers.TensorBoardLogger
+    init_args:
+      save_dir: logs
+      name: hvf_system

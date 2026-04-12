@@ -102,7 +102,19 @@ class HVFSystem(L.LightningModule):
 
         # Calculate individual losses
         #loss_cls = F.cross_entropy(out["curr_category"], y_class)
-        loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+        
+        # weight inversely proportional to class frequency because of imbalanced data affecting classifier accuracy
+        # Mild: 13015, Moderate: 4722, Severe: 3778
+        #class_weights = torch.tensor([1.0, 2.76, 3.44], device=self.device) removed for focal loss
+        
+        #---cross entropy---
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long(), weight=class_weights)
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+        # ---
+        
+        #---focal loss---
+        loss_cls = self._focal_loss(out.curr_category, batch.y.category.long())
+        # ---
 
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
@@ -122,7 +134,18 @@ class HVFSystem(L.LightningModule):
 
         # 1. Compute Losses (for monitoring convergence)
         # loss_curr = F.cross_entropy(out["curr_category"], y_class)
-        loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+        
+        #same
+        # Weight inversely proportional to class frequency
+        # Mild: 13015, Moderate: 4722, Severe: 3778
+        #class_weights = torch.tensor([1.0, 2.76, 3.44], device=self.device) removed for focal loss
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long(), weight=class_weights)
+        #loss_cls = F.cross_entropy(out.curr_category, batch.y.category.long())
+        
+        #---focal loss---
+        loss_cls = self._focal_loss(out.curr_category, batch.y.category.long())
+        # ---
+        
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
         
@@ -165,10 +188,17 @@ class HVFSystem(L.LightningModule):
         # Regression errors
         loss_md = F.mse_loss(out.next_mtd.squeeze(), batch.y.mtd)
         loss_hvf = F.mse_loss(out.next_hvf, batch.y.grids)
-        
-        preds = out.curr_category.argmax(dim=1)
+        self.log("test/md_mse", loss_md)
+        self.log("test/hvf_mse", loss_hvf)
+    
+
         labels = batch.y.category.long()
-        acc = (preds == batch.y.category.long()).float().mean()
+
+        #classifier
+        preds = out.curr_category.argmax(dim=1)
+        #labels = batch.y.category.long()
+        #acc = (preds == batch.y.category.long()).float().mean()
+        acc = (preds == labels).float().mean()
         
         self.log("test/md_mse", loss_md)
         self.log("test/hvf_mse", loss_hvf)
@@ -200,3 +230,11 @@ class HVFSystem(L.LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)  # type: ignore
+
+
+    def _focal_loss(self, logits, targets, gamma=2.0): #focal loss replaces cross entropy loss:  dynamically adjusts based on how confident the model is. If the model easily predicts a "Mild" case (high confidence), it reduces the loss to near zero
+        class_weights = torch.tensor([1.0, 2.76, 3.44], device=self.device)
+        ce_loss = F.cross_entropy(logits, targets, weight=class_weights, reduction="none")
+        pt = torch.exp(-ce_loss)
+        focal_loss = ((1 - pt) ** gamma) * ce_loss
+        return focal_loss.mean()

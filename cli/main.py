@@ -36,15 +36,7 @@ def cli_main():
                     save_last=True,
                     filename="best",
                 )
-            ],
-            "logger": {
-                "class_path": "lightning.pytorch.loggers.TensorBoardLogger",
-                "init_args": {
-                    "save_dir": log_path,
-                    "name": name,
-                    "version": version,
-                },
-            },
+            ],#removed logger for test
         },
     )
 
