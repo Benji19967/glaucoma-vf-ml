@@ -8,8 +8,8 @@ import sys
 import numpy as np
 
 
-from glaucoma_vf.data_utils import df_to_hvf_grids, map_mtd_to_enum
-from glaucoma_vf.dataset import UWHVFDataset
+from glaucoma_vf.data.data_utils import df_to_hvf_grids, map_mtd_to_enum
+from glaucoma_vf.data.uwhvf.dataset import UWHVFDataset
 from glaucoma_vf.utils import get_git_root
 
 REPO_ROOT = get_git_root(__file__)
