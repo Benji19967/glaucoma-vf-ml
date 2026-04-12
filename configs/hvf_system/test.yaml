@@ -1,5 +1,11 @@
+model:
+  class_path: glaucoma_vf.models.hvf_cnn.HVFSystem
+data:
+  class_path: glaucoma_vf.data.uwhvf.datamodule.UWHVFDataModule
+  init_args:
+    batch_size: 32
 trainer:
   callbacks:
-    - class_path: glaucoma_vf.callbacks.uwhvf_logger.HVFLogger
+    - class_path: glaucoma_vf.callbacks.uwhvf_logger.UWHVFLogger
       init_args:
-        display_matplotlib: false
+        display_matplotlib: True
