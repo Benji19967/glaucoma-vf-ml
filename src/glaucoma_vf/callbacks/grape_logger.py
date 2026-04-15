@@ -33,13 +33,14 @@ class GRAPELogger(Callback):
         labels = LabelSet(**batch["y"])
         batch = Batch(X=features, y=labels)
 
-        x_grids = batch.X.grids.cpu().numpy().squeeze(1)
+        x_annotated_images = batch.X.annotated_image.cpu().numpy()
 
-        y_grids = batch.y.grids.cpu().numpy().squeeze(1)
+        y_grids = batch.y.grid.cpu().numpy().squeeze(1)
         preds_grids = outputs.pred_grids.squeeze(1)
 
+        image_names = batch.y.image_name
+
         # Un-normalize
-        x_grids *= 40
         y_grids *= 40
         preds_grids *= 40
 
@@ -49,16 +50,18 @@ class GRAPELogger(Callback):
             # 'outputs' usually contains the logits/preds if you return them in test_step
             # If your test_step returns {'loss': loss, 'preds': preds}, access it here:
             self.test_outputs = {
-                "x_grids": x_grids,
+                "x_annotated_images": x_annotated_images,
                 "y_grids": y_grids,
+                "image_names": image_names,
                 "preds_grids": preds_grids,
             }
 
     def on_test_epoch_end(self, trainer, pl_module):
         if self.test_outputs:
             plot_grape_predictions(
-                self.test_outputs["x_grids"],
+                self.test_outputs["x_annotated_images"],
                 self.test_outputs["y_grids"],
+                self.test_outputs["image_names"],
                 self.test_outputs["preds_grids"],
                 n_samples=5,
             )
