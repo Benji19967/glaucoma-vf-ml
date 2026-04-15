@@ -10,16 +10,22 @@ PROCESSED_POINTS_FILENAME = ASSETS_DIR / "grape_vf_report_coords_degrees.txt"
 MASTER_LOOKUP_FILENAME = ASSETS_DIR / "grape_master_lookup_61.npy"
 
 
-def plot_grape_predictions(x_grids, y_grids, preds_grids, n_samples=5):
+def plot_grape_predictions(
+    x_annotated_images, y_grids, image_names, preds_grids, n_samples=5
+):
     preds_grids = preds_grids.cpu().numpy()
 
+    idx = 0
+
     # (61, 61)
-    preds_grid = preds_grids[0]
+    pred_grid = preds_grids[idx]
+    y_grid = y_grids[idx]
 
     # Ungrid: (61, 61) -> (61,)
     master_lookup = np.load(MASTER_LOOKUP_FILENAME).astype(int)
     _, ungrid_indices = np.unique(master_lookup, return_index=True)
-    preds = preds_grid.flatten()[ungrid_indices]
+    pred_vf = pred_grid.flatten()[ungrid_indices]
+    actual_vf = y_grid.flatten()[ungrid_indices]
 
     # Generate a 500x500 high-res mask for a professional look
     res = 500
@@ -27,7 +33,7 @@ def plot_grape_predictions(x_grids, y_grids, preds_grids, n_samples=5):
     smooth_mask = create_smooth_circular_mask(res, res, radius=245, smoothness=1.5)
     master_lookup_highres = create_highres_lookup(coords_deg)
 
-    plot(preds, smooth_mask, master_lookup_highres)
+    plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_names[idx])
 
 
 def create_smooth_circular_mask(h, w, center=None, radius=None, smoothness=0.5):
@@ -60,41 +66,51 @@ def create_highres_lookup(coords_deg, resolution=500):
     return idx.reshape(resolution, resolution)
 
 
-def plot(preds, smooth_mask, master_lookup_highres, idx=5):
+def plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_name, idx=5):
     cmap = plt.get_cmap("RdYlGn").copy()
     cmap.set_under("white")
-    p_min = preds.min()
-    p_max = preds.max()
+    a_min = actual_vf.min()
+    a_max = actual_vf.max()
 
-    img = get_smooth_vf_plot(smooth_mask, preds, master_lookup_highres)
+    p_min = pred_vf.min()
+    p_max = pred_vf.max()
 
-    fig, ax = plt.subplots(figsize=(8, 6))
-    im = ax.imshow(
-        img,
-        cmap=cmap,
-        vmin=p_min,
-        vmax=p_max,
-        origin="upper",
-        # Use 'interpolation=lanczos' or 'bicubic' for the smoothest visual output
-        interpolation="lanczos",
-    )
-    # Add the Colorbar
-    cbar = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.05)
-    cbar.set_label("Sensitivity (dB)", rotation=270, labelpad=15, fontweight="bold")
+    img_actual = get_smooth_vf_plot(smooth_mask, actual_vf, master_lookup_highres)
+    img_pred = get_smooth_vf_plot(smooth_mask, pred_vf, master_lookup_highres)
+    diff_vf = actual_vf - pred_vf
+    img_diff = get_smooth_vf_plot(smooth_mask, diff_vf, master_lookup_highres)
 
-    # Optional: Set specific tick marks
-    cbar.set_ticks(np.linspace(0, int(p_max), 5))  # type: ignore
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    # --- Panel 1: Actual ---
+    im1 = axes[0].imshow(img_actual, cmap=cmap, vmin=a_min, vmax=a_max, origin="upper")
+    axes[0].set_title(f"Actual VF\n{image_name}", fontweight="bold")
+    fig.colorbar(im1, ax=axes[0], shrink=0.6)
 
-    plt.title("Visual Field Prediction", pad=20)
-    plt.axis("off")  # Hide the pixel coordinates for a cleaner look
+    # --- Panel 2: Prediction ---
+    im2 = axes[1].imshow(img_pred, cmap=cmap, vmin=p_min, vmax=p_max, origin="upper")
+    axes[1].set_title("Model Prediction", fontweight="bold")
+    fig.colorbar(im2, ax=axes[1], shrink=0.6)
+
+    # --- Panel 3: Difference (Error) ---
+    # Use a diverging colormap: Red = Model underestimated, Blue = Model overestimated
+    im3 = axes[2].imshow(img_diff, cmap="bwr", vmin=-15, vmax=15, origin="upper")
+    axes[2].set_title("Difference (Actual - Pred)", fontweight="bold")
+    cbar_diff = fig.colorbar(im3, ax=axes[2], shrink=0.6)
+    cbar_diff.set_label("dB Error")
+
+    # Clean up
+    for ax in axes:
+        ax.axis("off")
+
+    plt.tight_layout()
     plt.show()
 
 
-def get_smooth_vf_plot(smooth_mask, preds, master_lookup_highres):
+def get_smooth_vf_plot(smooth_mask, pred_vf, master_lookup_highres):
     WHITE = -999
     # 1. Map values to high-res grid (e.g., 500x500)
     # This ensures the tiles don't look 'blocky' at the edges
-    high_res_img = preds[master_lookup_highres]
+    high_res_img = pred_vf[master_lookup_highres]
 
     # 2. Apply negative values to the background
     # Logic: If mask is 1, keep img. If mask is 0, set to neg_value.

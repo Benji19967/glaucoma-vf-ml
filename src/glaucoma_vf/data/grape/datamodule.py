@@ -1,7 +1,11 @@
+from pathlib import Path
+
 import lightning as L
+import numpy as np
 import polars as pl
+from PIL import Image
 from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from glaucoma_vf.data.data_utils import df_to_vf_grids_grape
 from glaucoma_vf.data.grape.dataset import GRAPEDataset
@@ -9,11 +13,15 @@ from glaucoma_vf.utils import get_git_root
 
 REPO_ROOT = get_git_root(__file__)
 GRAPE_DIR = REPO_ROOT / "data" / "GRAPE"
+ANNOTATED_IMAGES_DIR = GRAPE_DIR / "Annotated Images"
 VF_DATA_FILENAME = GRAPE_DIR / "VFs_and_clinical_info.xlsx"
 
-VF_DATA_BASELINE_SHEET = "Baseline"
+VF_DATA_FOLLOWUP_SHEET = "Follow-up"
+
+TARGET_FILE_SIZE = (432, 432)
 
 
+# TODO: Do we need colored images, or are grayscale ones enough?
 class GRAPEDataModule(L.LightningDataModule):
     """
     Prepares the train/val/test Dataloaders
@@ -26,17 +34,30 @@ class GRAPEDataModule(L.LightningDataModule):
 
     def setup(self, stage: str):
         """
-        Create the train/val/test datasets from the CSV file.
+        Create the train/val/test datasets from the CSV file and
+        annotated images.
         """
-        df_baseline = self._load_df(sheet_name=VF_DATA_BASELINE_SHEET)
+        df_follow_up = self._load_df(sheet_name=VF_DATA_FOLLOWUP_SHEET)
 
-        # (N, 61, 61)
-        x_grids = self._get_normalized_grids(df_baseline)
+        # 631 image names
+        image_names_sorted = self._get_image_names(df_follow_up)
 
-        # Dummy for now
-        y_grids = x_grids
+        # 631 images
+        x_annotated_images = self._load_images(
+            dirname=ANNOTATED_IMAGES_DIR,
+            image_names=image_names_sorted,
+            target_size=TARGET_FILE_SIZE,
+        )
 
-        train_set, val_set, test_set = self._split_dataset(x_grids, y_grids)
+        # 631 rows
+        df_follow_up = df_follow_up.filter(pl.col("Corresponding CFP") != "/")
+
+        # (631, 61, 61)
+        y_grids = self._get_normalized_grids(df_follow_up)
+
+        train_set, val_set, test_set = self._split_dataset(
+            x_annotated_images, y_grids, image_names_sorted
+        )
 
         if stage == "fit":
             self.train_ds = train_set
@@ -57,25 +78,49 @@ class GRAPEDataModule(L.LightningDataModule):
     def test_dataloader(self):
         return DataLoader(self.test_ds, batch_size=self.batch_size, shuffle=False)
 
-    def _split_dataset(self, x_grids, y_grids):
-        # 1. First split: Separate the Test set (10%)
-        x_train_val, x_test, y_train_val, y_test = train_test_split(
-            x_grids, y_grids, test_size=0.10, random_state=42, shuffle=True
+    def _get_image_names(self, df_follow_up):
+        image_names_sorted = list(
+            df_follow_up.filter(pl.col("Corresponding CFP") != "/")
+            .select(pl.col("Corresponding CFP"))
+            .to_series()
         )
+        return image_names_sorted
 
-        # 2. Second split: Separate Train and Val from the remaining 90%
-        # To get 10% of the original total for Val, we take ~11% of the 90%
-        x_train, x_val, y_train, y_val = train_test_split(
-            x_train_val,
-            y_train_val,
-            test_size=0.111,  # 0.1 / 0.9 ≈ 0.111
-            random_state=42,
-            shuffle=True,
-        )
+    def _load_images(
+        self, dirname: Path, image_names: list[str], target_size: tuple[int, int]
+    ) -> list[Image.Image]:
+        images = []
+        for name in image_names:
+            path = dirname / name
+            img = Image.open(path).convert("RGB").resize(target_size)
+            images.append(img)
 
-        train_set = GRAPEDataset(x_train, y_train)
-        val_set = GRAPEDataset(x_val, y_val)
-        test_set = GRAPEDataset(x_test, y_test)
+        return images
+
+    def _split_dataset(self, x_annotated_images, y_grids, image_names):
+        assert len(x_annotated_images) == len(y_grids)
+
+        # Only load the master data once
+        full_dataset = GRAPEDataset(x_annotated_images, y_grids, image_names)
+        n_total = len(full_dataset)
+
+        # Split logic
+        indices = np.arange(n_total)
+        np.random.shuffle(indices)
+
+        # 3. Calculate split points
+        train_end = int(0.8 * n_total)
+        val_end = int(0.9 * n_total)  # 0.8 + 0.1
+
+        # 4. Slice indices
+        train_idx = indices[:train_end]
+        val_idx = indices[train_end:val_end]
+        test_idx = indices[val_end:]
+
+        # 5. Create Subsets
+        train_set = Subset(full_dataset, train_idx.tolist())
+        val_set = Subset(full_dataset, val_idx.tolist())
+        test_set = Subset(full_dataset, test_idx.tolist())
 
         return train_set, val_set, test_set
 

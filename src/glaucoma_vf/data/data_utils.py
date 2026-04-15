@@ -57,7 +57,7 @@ def df_to_vf_grids_grape(df: pl.DataFrame) -> np.ndarray:
     Converts a Polars DataFrame of (N, 61) into a 3D NumPy array (N, 61, 61).
     """
     # Load VFs
-    cols_to_load = ["VF"] + [str(i) for i in range(5, 65)]
+    cols_to_load = ["VF", ""] + [str(i) for i in range(59)]
     data_61 = df.select(cols_to_load).to_numpy().astype(np.float32)
 
     # 1. Ensure master_lookup is a 61x61 numpy array of integers
