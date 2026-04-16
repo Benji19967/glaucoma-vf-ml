@@ -110,9 +110,19 @@ For example
 
 ### Checking the logs
 
+Locally:
 ```
 tensorboard --logdir .
 ```
+
+On ubelix:
+
+```
+tensorboard --logdir=logs/ --port=6006 --bind_all
+```
+
+then use VS Code with ssh forwarding to view (check `Ports` section).
+
 
 ## Running on Ubelix HPC (with GPUs)
 
