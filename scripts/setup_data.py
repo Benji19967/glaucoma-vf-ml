@@ -64,7 +64,7 @@ def download_figshare():
             print(f"{name} already exists, skipping.")
 
 
-def setup_and_extract_rar(rar_file_path, extraction_path="extracted_data"):
+def setup_and_extract_rar():
     """
     For Ubelix HPC cluster
     """
@@ -72,8 +72,6 @@ def setup_and_extract_rar(rar_file_path, extraction_path="extracted_data"):
     url = "https://7-zip.org/a/7zz-linux-x64.tar.xz"
     binary_tar = "7zz-linux-x64.tar.xz"
     binary_name = "./7zz"
-
-    print(f"--- Starting extraction process for: {rar_file_path} ---")
 
     # 2. Download 7-Zip binary if it doesn't exist
     if not os.path.exists(binary_name):
