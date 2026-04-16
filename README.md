@@ -133,7 +133,11 @@ srun --partition=gpu --gres=gpu:rtx4090:1 --cpus-per-task=4 --nodes=1 --mem=16G 
 then on the `gnode`:
 
 ```
-apptainer run --nv --bind ./data:/glaucoma-vf-ml/data --bind ./assets:/glaucoma-vf-ml/assets glaucoma-ml.sif
+apptainer run --nv \
+    --bind ./data:/glaucoma-vf-ml/data \
+    --bind ./assets:/glaucoma-vf-ml/assets \
+    --bind ./src:/glaucoma-vf-ml/src \
+    glaucoma-ml.sif
 ```
 
 this will run the command specified in `%runscript` in `Apptainer.def`.
@@ -141,7 +145,11 @@ this will run the command specified in `%runscript` in `Apptainer.def`.
 To run a different command, enter a shell inside the container:
 
 ```
-apptainer shell --nv --bind ./data:/glaucoma-vf-ml/data --bind ./assets:/glaucoma-vf-ml/assets glaucoma-ml.sif
+apptainer shell --nv \
+    --bind ./data:/glaucoma-vf-ml/data \
+    --bind ./assets:/glaucoma-vf-ml/assets \
+    --bind ./src:/glaucoma-vf-ml/src \
+    glaucoma-ml.sif
 ```
 
 then run your command.
