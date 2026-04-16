@@ -1,6 +1,6 @@
 from lightning.pytorch.callbacks import Callback
 
-from glaucoma_vf.models.dummy_grape_vf_model import (
+from glaucoma_vf.models.grape_efficient_net import (
     Batch,
     FeatureSet,
     LabelSet,
