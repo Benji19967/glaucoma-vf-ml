@@ -1,6 +1,11 @@
+import os
 import shutil
+import socket
 import subprocess
+import tarfile
+import urllib.request
 from pathlib import Path
+from re import L
 
 import git
 import requests
@@ -59,6 +64,46 @@ def download_figshare():
             print(f"{name} already exists, skipping.")
 
 
+def setup_and_extract_rar():
+    """
+    For Ubelix HPC cluster
+    """
+    # 1. Configuration
+    url = "https://github.com/ip7z/7zip/releases/download/26.00/7z2600-linux-x64.tar.xz"
+    binary_tar = "7z2600-linux-x64.tar.xz"
+    binary_name = "./7zz"
+
+    # 2. Download 7-Zip binary if it doesn't exist
+    if not os.path.exists(binary_name):
+        print(f"Downloading 7-Zip from {url}...")
+        urllib.request.urlretrieve(url, binary_tar)
+
+        print("Extracting 7-Zip binary...")
+        # Note: standard tarfile module handles .xz if lzma is available
+        with tarfile.open(binary_tar, "r:xz") as tar:
+            tar.extract("7zz")
+
+        # Ensure it is executable
+        os.chmod(binary_name, 0o755)
+        os.remove(binary_tar)
+        print("7-Zip setup complete.")
+
+    for rar in RAR_FILES:
+        path = GRAPE_DIR / rar
+        print(f"Extracting {path}")
+        try:
+            # 4. Run the extraction command
+            # 'x' = extract with full paths
+            # '-o' = output directory (Note: no space after -o)
+            # '-y' = assume Yes on all queries (non-interactive)
+            cmd = [binary_name, "x", path, f"-o{str(GRAPE_DIR)}", "-y"]
+            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+            print("Success!")
+        except subprocess.CalledProcessError as e:
+            print(f"Error during extraction: {e}")
+            print(f"Stderr: {e.stderr}")
+
+
 def extract_rar_files():
     """Extracts RAR files using unar."""
     print("\nExtracting RAR files...")
@@ -103,11 +148,21 @@ def sync_uwhvf():
         subprocess.run(["git", "-C", str(UWHVF_DIR), "pull"], check=True)
 
 
+def is_on_hpc():
+    hostname = socket.gethostname()
+    if "gnode" in hostname or "submit" in hostname:
+        return True
+    return False
+
+
 if __name__ == "__main__":
     try:
         download_figshare()
         print("-" * 30)
-        extract_rar_files()
+        if is_on_hpc():
+            setup_and_extract_rar()
+        else:
+            extract_rar_files()
         print("-" * 30)
         sync_uwhvf()
         print("\nData setup complete!")

@@ -110,9 +110,19 @@ For example
 
 ### Checking the logs
 
+Locally:
 ```
 tensorboard --logdir .
 ```
+
+On ubelix:
+
+```
+tensorboard --logdir=logs/ --port=6006 --bind_all
+```
+
+then use VS Code with ssh forwarding to view (check `Ports` section).
+
 
 ## Running on Ubelix HPC (with GPUs)
 
@@ -133,8 +143,26 @@ srun --partition=gpu --gres=gpu:rtx4090:1 --cpus-per-task=4 --nodes=1 --mem=16G 
 then on the `gnode`:
 
 ```
-apptainer run --nv --bind ./data:/glaucoma-vf-ml/data glaucoma-ml.sif
+apptainer run --nv \
+    --bind ./data:/glaucoma-vf-ml/data \
+    --bind ./assets:/glaucoma-vf-ml/assets \
+    --bind ./src:/glaucoma-vf-ml/src \
+    glaucoma-ml.sif
 ```
+
+this will run the command specified in `%runscript` in `Apptainer.def`.
+
+To run a different command, enter a shell inside the container:
+
+```
+apptainer shell --nv \
+    --bind ./data:/glaucoma-vf-ml/data \
+    --bind ./assets:/glaucoma-vf-ml/assets \
+    --bind ./src:/glaucoma-vf-ml/src \
+    glaucoma-ml.sif
+```
+
+then run your command.
 
 
 ### Creating a sandbox apptainer environment
