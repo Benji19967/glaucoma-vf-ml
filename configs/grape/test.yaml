@@ -1,5 +1,5 @@
 model:
-  class_path: glaucoma_vf.models.dummy_grape_vf_model.DummyVFModel
+  class_path: glaucoma_vf.models.dummy_grape_vf_model.EfficientNetModel
 data:
   class_path: glaucoma_vf.data.grape.datamodule.GRAPEDataModule
   init_args:
