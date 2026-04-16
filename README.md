@@ -136,6 +136,16 @@ then on the `gnode`:
 apptainer run --nv --bind ./data:/glaucoma-vf-ml/data glaucoma-ml.sif
 ```
 
+this will run the command specified in `%runscript` in `Apptainer.def`.
+
+To run a different command, enter a shell inside the container:
+
+```
+apptainer shell --nv --bind ./data:/glaucoma-vf-ml/data glaucoma-ml.sif
+```
+
+then run your command.
+
 
 ### Creating a sandbox apptainer environment
 
