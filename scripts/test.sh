@@ -30,7 +30,8 @@ fi
 echo "🚀 Testing Model: $MODEL_NAME"
 echo "📂 Version: $VERSION"
 
-RESULTS_DIR=logs/${MODEL_NAME}/${VERSION}/test_results
+# export, so can reuse in python code
+export RESULTS_DIR=logs/${MODEL_NAME}/${VERSION}/test_results
 mkdir -p $RESULTS_DIR
 
 # --- DEBUG with VSCode (see .vscode/launch.json)

@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import cKDTree  # type: ignore
@@ -103,6 +106,11 @@ def plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_name, idx
         ax.axis("off")
 
     plt.tight_layout()
+
+    results_dir = get_results_dir()
+    filename = str(results_dir / "result_plot.png")
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+
     plt.show()
 
 
@@ -121,3 +129,8 @@ def get_smooth_vf_plot(smooth_mask, pred_vf, master_lookup_highres):
     final_viz[edges] = WHITE
 
     return final_viz
+
+
+def get_results_dir() -> Path:
+    results_dir = os.environ.get("RESULTS_DIR", "./default_results")
+    return Path(results_dir)
