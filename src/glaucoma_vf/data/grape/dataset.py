@@ -17,7 +17,7 @@ COORDINATES_DIR = GRAPE_DIR / "json"
 
 
 class FeatureSet(TypedDict):
-    annotated_image: torch.Tensor
+    image: torch.Tensor
 
 
 class LabelSet(TypedDict):
@@ -34,14 +34,14 @@ class DatasetItem(TypedDict):
 class GRAPEDataset(Dataset):
     def __init__(
         self,
-        x_annotated_images,
+        x_images,
         y_grids,
         image_names,
     ):
         """
         Args:
-            x_annotated_images (list[PIL Image]):
-                Annotated images of optic nerves
+            x_images (list[PIL Image]):
+                Images of optic nerves
                 Shape: N x (TARGET_FILE_SIZE, TARGET_FILE_SIZE, 3)
             y_grids (`np.array`):
                 Visual Field grids.
@@ -51,19 +51,19 @@ class GRAPEDataset(Dataset):
                 identify each item.
                 Shape: N
         """
-        self.x_annotated_images = x_annotated_images
+        self.x_images = x_images
         self.y_grids = y_grids
         self.image_names = image_names
 
     def __len__(self) -> int:
-        return len(self.x_annotated_images)
+        return len(self.x_images)
 
     def __getitem__(self, idx) -> DatasetItem:
         """
         Returns:
             BatchItem: A dictionary containing:
                 - FeatureSet:
-                    - x_annotated_images: The images of optic nerves
+                    - x_images: The images of optic nerves
                     Shape: (3, TARGET_FILE_SIZE, TARGET_FILE_SIZE)
                 - LabelSet:
                     - y_grid: The next 61x61 VF sensitivity grid
@@ -72,13 +72,13 @@ class GRAPEDataset(Dataset):
                     str
         """
         transform = transforms.Compose([transforms.ToTensor()])
-        x_annotated_image = transform(self.x_annotated_images[idx])
+        x_image = transform(self.x_images[idx])
 
         y_grid = torch.as_tensor(self.y_grids[idx], dtype=torch.float32).unsqueeze(0)
 
         return DatasetItem(
             X=FeatureSet(
-                annotated_image=x_annotated_image,
+                image=x_image,
             ),
             y=LabelSet(
                 grid=y_grid,

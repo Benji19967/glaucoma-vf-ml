@@ -34,7 +34,7 @@ class GRAPELogger(Callback):
         labels = LabelSet(**batch["y"])
         batch = Batch(X=features, y=labels)
 
-        x_annotated_images = batch.X.annotated_image.cpu().numpy()
+        x_annotated_images = batch.X.image.cpu().numpy()
 
         y_grids = batch.y.grid.cpu().numpy().squeeze(1)
         preds_grids = outputs.pred_grids.squeeze(1)

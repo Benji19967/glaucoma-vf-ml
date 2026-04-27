@@ -8,7 +8,7 @@ import torchvision.models as models
 
 
 class FeatureSet(NamedTuple):
-    annotated_image: torch.Tensor
+    image: torch.Tensor
 
 
 class LabelSet(NamedTuple):
@@ -49,7 +49,7 @@ class EfficientNetModel(L.LightningModule):
 
     def forward(self, X: FeatureSet):
         # Reshape back to the 61x61 grid
-        out = self.backbone(X.annotated_image).view(-1, 1, 61, 61)
+        out = self.backbone(X.image).view(-1, 1, 61, 61)
         return ModelOutput(pred_grids=out)
 
     def training_step(self, batch, batch_idx):

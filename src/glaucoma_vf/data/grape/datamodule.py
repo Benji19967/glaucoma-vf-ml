@@ -13,12 +13,13 @@ from glaucoma_vf.utils import get_git_root
 
 REPO_ROOT = get_git_root(__file__)
 GRAPE_DIR = REPO_ROOT / "data" / "GRAPE"
-ANNOTATED_IMAGES_DIR = GRAPE_DIR / "Annotated Images"
+# ANNOTATED_IMAGES_DIR = GRAPE_DIR / "Annotated Images"
+CFP_IMAGES_DIR = GRAPE_DIR / "CFPs"
 VF_DATA_FILENAME = GRAPE_DIR / "VFs_and_clinical_info.xlsx"
 
 VF_DATA_FOLLOWUP_SHEET = "Follow-up"
 
-TARGET_FILE_SIZE = (432, 432)
+TARGET_FILE_SIZE = (1556, 1556)
 
 
 # TODO: Do we need colored images, or are grayscale ones enough?
@@ -43,8 +44,8 @@ class GRAPEDataModule(L.LightningDataModule):
         image_names_sorted = self._get_image_names(df_follow_up)
 
         # 631 images
-        x_annotated_images = self._load_images(
-            dirname=ANNOTATED_IMAGES_DIR,
+        x_images = self._load_images(
+            dirname=CFP_IMAGES_DIR,
             image_names=image_names_sorted,
             target_size=TARGET_FILE_SIZE,
         )
@@ -56,7 +57,7 @@ class GRAPEDataModule(L.LightningDataModule):
         y_grids = self._get_normalized_grids(df_follow_up)
 
         train_set, val_set, test_set = self._split_dataset(
-            x_annotated_images, y_grids, image_names_sorted
+            x_images, y_grids, image_names_sorted
         )
 
         if stage == "fit":
@@ -97,11 +98,11 @@ class GRAPEDataModule(L.LightningDataModule):
 
         return images
 
-    def _split_dataset(self, x_annotated_images, y_grids, image_names):
-        assert len(x_annotated_images) == len(y_grids)
+    def _split_dataset(self, x_images, y_grids, image_names):
+        assert len(x_images) == len(y_grids)
 
         # Only load the master data once
-        full_dataset = GRAPEDataset(x_annotated_images, y_grids, image_names)
+        full_dataset = GRAPEDataset(x_images, y_grids, image_names)
         n_total = len(full_dataset)
 
         # Split logic
