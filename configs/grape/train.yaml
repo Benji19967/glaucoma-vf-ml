@@ -1,11 +1,13 @@
 model:
-  class_path: glaucoma_vf.models.dummy_grape_vf_model.DummyVFModel
+  class_path: glaucoma_vf.models.grape_efficient_net.EfficientNetModel
+  init_args:
+    lr: 1e-4
 data:
   class_path: glaucoma_vf.data.grape.datamodule.GRAPEDataModule
   init_args:
-    batch_size: 32
+    batch_size: 8
 trainer:
-  max_epochs: 3
+  max_epochs: 20
   callbacks:
   - class_path: lightning.pytorch.callbacks.ModelCheckpoint
     init_args:

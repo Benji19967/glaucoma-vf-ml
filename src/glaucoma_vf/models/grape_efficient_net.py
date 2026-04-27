@@ -4,6 +4,7 @@ import lightning as L
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
 
 
 class FeatureSet(NamedTuple):
@@ -24,35 +25,32 @@ class ModelOutput(NamedTuple):
     pred_grids: torch.Tensor
 
 
-class DummyVFModel(L.LightningModule):
+class EfficientNetModel(L.LightningModule):
     def __init__(self, lr=1e-3):
         super().__init__()
         self.lr = lr
 
-        # 1. Feature Extractor (CNN)
-        # Input: (B, 3, 432, 432)
-        self.feature_extractor = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, stride=2, padding=1),  # -> 216x216
-            nn.ReLU(),
-            nn.MaxPool2d(2),  # -> 108x108
-            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),  # -> 54x54
-            nn.ReLU(),
-            nn.MaxPool2d(2),  # -> 27x27
-            nn.Flatten(),  # -> 32 * 27 * 27 = 23,328
-        )
+        # Load pretrained weights (trained on 1M+ images)
+        self.backbone = models.efficientnet_b0(weights="DEFAULT")
 
-        # 2. Prediction Head
-        # Projects CNN features to the 61x61 grid (3721 values)
+        # Freeze early layers (optional, but helps with small datasets)
+        # for param in self.backbone.features[:4].parameters():
+        #     param.requires_grad = False
+
+        # Replace the classifier head
+        # EfficientNet-B0 output features are 1280
         self.head = nn.Sequential(
-            nn.Linear(32 * 27 * 27, 3721),
-            nn.Sigmoid(),  # Use Sigmoid if your dB values are normalized [0, 1]
+            nn.Linear(1280, 512),
+            nn.ReLU(),
+            nn.Dropout(0.3),  # Essential for small datasets
+            nn.Linear(512, 3721),  # 61 * 61 grid
         )
+        self.backbone.classifier = self.head
 
     def forward(self, X: FeatureSet):
-        features = self.feature_extractor(X.annotated_image)
-        out = self.head(features)
         # Reshape back to the 61x61 grid
-        return ModelOutput(pred_grids=out.view(-1, 1, 61, 61))
+        out = self.backbone(X.annotated_image).view(-1, 1, 61, 61)
+        return ModelOutput(pred_grids=out)
 
     def training_step(self, batch, batch_idx):
         batch, out = self._shared_step(batch)
@@ -82,4 +80,4 @@ class DummyVFModel(L.LightningModule):
         return batch, out
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), lr=self.lr)

@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial import cKDTree  # type: ignore
@@ -34,6 +37,20 @@ def plot_grape_predictions(
     master_lookup_highres = create_highres_lookup(coords_deg)
 
     plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_names[idx])
+
+    # --- Plot diffs for 16 samples ---
+
+    # 1. Select the first 16 from the batch
+    num_samples = 16
+    batch_preds = preds_grids[:num_samples]
+    batch_actuals = y_grids[:num_samples]
+
+    # 2. Ungrid them
+    # We flatten the 61x61 part and keep the batch dimension
+    pred_vfs = [p.flatten()[ungrid_indices] for p in batch_preds]
+    actual_vfs = [a.flatten()[ungrid_indices] for a in batch_actuals]
+
+    plot_16_diffs(actual_vfs, pred_vfs, smooth_mask, master_lookup_highres, image_names)
 
 
 def create_smooth_circular_mask(h, w, center=None, radius=None, smoothness=0.5):
@@ -103,7 +120,40 @@ def plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_name, idx
         ax.axis("off")
 
     plt.tight_layout()
+
+    results_dir = get_results_dir()
+    filename = str(results_dir / "result_plot.png")
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+
     plt.show()
+
+
+def plot_16_diffs(actuals, preds, smooth_mask, master_lookup_highres, image_names):
+    # Create a 4x4 grid
+    fig, axes = plt.subplots(4, 4, figsize=(20, 20))
+    axes = axes.flatten()  # Flatten to iterate easily 0-15
+
+    for i in range(16):
+        # Calculate the difference for this specific sample
+        diff_vf = actuals[i] - preds[i]
+        img_diff = get_smooth_vf_plot(smooth_mask, diff_vf, master_lookup_highres)
+
+        # Plot on the specific subplot
+        im = axes[i].imshow(img_diff, cmap="bwr", vmin=-15, vmax=15, origin="upper")
+        axes[i].set_title(f"{image_names[i]}", fontsize=10)
+        axes[i].axis("off")
+
+    # Add one shared colorbar to the right to save space/memory
+    fig.subplots_adjust(right=0.85)
+    cbar_ax = fig.add_axes(
+        [0.88, 0.15, 0.03, 0.7]  # type: ignore
+    )  # [left, bottom, width, height]  # type: ignore
+    fig.colorbar(im, cax=cbar_ax, label="dB Error")  # type: ignore
+
+    results_dir = get_results_dir()
+    filename = str(results_dir / "batch_diffs.png")
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.close(fig)  # CRITICAL: Free memory after saving 16 images
 
 
 def get_smooth_vf_plot(smooth_mask, pred_vf, master_lookup_highres):
@@ -121,3 +171,8 @@ def get_smooth_vf_plot(smooth_mask, pred_vf, master_lookup_highres):
     final_viz[edges] = WHITE
 
     return final_viz
+
+
+def get_results_dir() -> Path:
+    results_dir = os.environ.get("RESULTS_DIR", "./default_results")
+    return Path(results_dir)
