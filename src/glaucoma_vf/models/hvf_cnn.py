@@ -206,7 +206,7 @@ class HVFSystem(L.LightningModule):
         self.log("test/hvf_mse", loss_hvf)
         self.log("test/cls_acc", acc, prog_bar=True)
 
-        # accuracy per class, bcz since most cases are Mild, the model says it performs good but is actually shit at detecting other classes (aka. accuracy paradox)
+        # accuracy per class, because since most cases are Mild, the model says it performs good but is actually bad at detecting other classes (aka. accuracy paradox)
         for cls in range(3):
             mask = labels == cls
             if mask.sum() > 0:
@@ -242,4 +242,3 @@ class HVFSystem(L.LightningModule):
         pt = torch.exp(-ce_loss)
         focal_loss = ((1 - pt) ** gamma) * ce_loss
         return focal_loss.mean()
-

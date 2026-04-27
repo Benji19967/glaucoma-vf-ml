@@ -57,16 +57,18 @@ class DummyVFModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         batch, out = self._shared_step(batch)
         loss = F.mse_loss(out.pred_grids, batch.y.grid)
-        self.log("train/loss", loss, prog_bar=True)
+        self.log("train/mse_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         batch, out = self._shared_step(batch)
         loss = F.mse_loss(out.pred_grids, batch.y.grid)
-        self.log("val/loss", loss, prog_bar=True)
+        self.log("val/mse_loss", loss, prog_bar=True)
 
     def test_step(self, batch, batch_idx) -> ModelOutput:  # type: ignore
         batch, out = self._shared_step(batch)
+        loss = F.mse_loss(out.pred_grids, batch.y.grid)
+        self.log("test/mse_loss", loss, prog_bar=True)
 
         return out
 
