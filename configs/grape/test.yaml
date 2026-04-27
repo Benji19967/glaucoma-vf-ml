@@ -6,4 +6,6 @@ data:
     batch_size: 32
 trainer:
   callbacks:
-    - class_path: glaucoma_vf.callbacks.grape_logger.GRAPELogger
+    class_path: glaucoma_vf.callbacks.grape_logger.GRAPELogger
+    init_args:
+      n_samples: 16

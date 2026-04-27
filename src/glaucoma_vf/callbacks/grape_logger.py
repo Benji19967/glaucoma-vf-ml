@@ -16,9 +16,10 @@ class GRAPELogger(Callback):
     Logs Visual Fields from the GRAPE dataset.
     """
 
-    def __init__(self):
+    def __init__(self, n_samples):
         super().__init__()
         self.test_outputs = {}  # Buffer to hold samples
+        self.n_samples = n_samples
 
     def on_test_batch_end(  # type: ignore
         self,
@@ -63,7 +64,7 @@ class GRAPELogger(Callback):
                 self.test_outputs["y_grids"],
                 self.test_outputs["image_names"],
                 self.test_outputs["preds_grids"],
-                n_samples=5,
+                n_samples=self.n_samples,
             )
             # Clear the buffer for the next run
             self.test_outputs = {}

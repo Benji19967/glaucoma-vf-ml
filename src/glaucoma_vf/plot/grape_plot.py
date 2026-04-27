@@ -18,17 +18,8 @@ def plot_grape_predictions(
 ):
     preds_grids = preds_grids.cpu().numpy()
 
-    idx = 0
-
-    # (61, 61)
-    pred_grid = preds_grids[idx]
-    y_grid = y_grids[idx]
-
-    # Ungrid: (61, 61) -> (61,)
     master_lookup = np.load(MASTER_LOOKUP_FILENAME).astype(int)
     _, ungrid_indices = np.unique(master_lookup, return_index=True)
-    pred_vf = pred_grid.flatten()[ungrid_indices]
-    actual_vf = y_grid.flatten()[ungrid_indices]
 
     # Generate a 500x500 high-res mask for a professional look
     res = 500
@@ -36,7 +27,15 @@ def plot_grape_predictions(
     smooth_mask = create_smooth_circular_mask(res, res, radius=245, smoothness=1.5)
     master_lookup_highres = create_highres_lookup(coords_deg)
 
-    plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_names[idx])
+    for idx in range(n_samples):
+        # (61, 61)
+        pred_grid = preds_grids[idx]
+        y_grid = y_grids[idx]
+
+        # Ungrid: (61, 61) -> (61,)
+        pred_vf = pred_grid.flatten()[ungrid_indices]
+        actual_vf = y_grid.flatten()[ungrid_indices]
+        plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_names[idx])
 
     # --- Plot diffs for 16 samples ---
 
@@ -122,10 +121,10 @@ def plot(actual_vf, pred_vf, smooth_mask, master_lookup_highres, image_name, idx
     plt.tight_layout()
 
     results_dir = get_results_dir()
-    filename = str(results_dir / "result_plot.png")
+    filename = str(results_dir / f"result_plot_{image_name}.png")
     plt.savefig(filename, dpi=300, bbox_inches="tight")
 
-    plt.show()
+    # plt.show()
 
 
 def plot_16_diffs(actuals, preds, smooth_mask, master_lookup_highres, image_names):
