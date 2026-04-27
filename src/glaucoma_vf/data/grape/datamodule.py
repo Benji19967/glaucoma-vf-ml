@@ -19,7 +19,7 @@ VF_DATA_FILENAME = GRAPE_DIR / "VFs_and_clinical_info.xlsx"
 
 VF_DATA_FOLLOWUP_SHEET = "Follow-up"
 
-TARGET_FILE_SIZE = (1556, 1556)
+TARGET_FILE_SIZE = (224, 224)
 
 
 # TODO: Do we need colored images, or are grayscale ones enough?

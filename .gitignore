@@ -4,6 +4,7 @@ lightning_logs/
 hvf_sandbox/
 *.sif
 .vscode/
+7zz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
