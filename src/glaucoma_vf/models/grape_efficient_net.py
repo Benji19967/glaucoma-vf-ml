@@ -108,5 +108,22 @@ class EfficientNetModel(L.LightningModule):
 
         return batch
 
-    def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.lr)
+    def configure_optimizers(self):  # type: ignore
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",  # We want to minimize validation loss
+            factor=0.5,  # Reduce LR by half when performance stalls
+            patience=5,  # Number of epochs to wait before reducing
+        )
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "val/mse_loss",  # This must match the key used in self.log()
+                "interval": "epoch",
+                "frequency": 1,
+            },
+        }
