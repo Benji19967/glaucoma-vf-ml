@@ -1,10 +1,11 @@
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import lightning as L
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
+from torchvision import transforms
 
 
 class FeatureSet(NamedTuple):
@@ -52,6 +53,29 @@ class EfficientNetModel(L.LightningModule):
         out = self.backbone(X.image).view(-1, 1, 61, 61)
         return ModelOutput(pred_grids=out)
 
+    def on_before_batch_transfer(self, batch: Any, dataloader_idx: int) -> Any:
+        """
+        Called before a batch is transferred to the device.
+        We apply data augmentation here only during training.
+        """
+        if self.trainer.training:
+            batch_t = self._get_typed_batch(batch)
+
+            # Get random parameters for affine transform
+            # (degrees, translate, scale, shear)
+            params = transforms.RandomAffine.get_params(
+                degrees=[-10, 10],
+                translate=[0.1, 0.1],
+                scale_ranges=[1.0, 1.0],
+                shears=[0, 0],
+                img_size=batch_t.X.image.shape[-2:],  # type: ignore
+            )
+
+            batch["X"]["image"] = transforms.functional.affine(batch_t.X.image, *params)  # type: ignore
+            batch["y"]["grid"] = transforms.functional.affine(batch_t.y.grid, *params)  # type: ignore
+
+        return batch
+
     def training_step(self, batch, batch_idx):
         batch, out = self._shared_step(batch)
         loss = F.mse_loss(out.pred_grids, batch.y.grid)
@@ -71,13 +95,18 @@ class EfficientNetModel(L.LightningModule):
         return out
 
     def _shared_step(self, batch) -> tuple[Batch, ModelOutput]:
-        features = FeatureSet(**batch["X"])
-        labels = LabelSet(**batch["y"])
-        batch = Batch(X=features, y=labels)
+        batch = self._get_typed_batch(batch)
 
         out = self(batch.X)
 
         return batch, out
+
+    def _get_typed_batch(self, batch) -> Batch:
+        features = FeatureSet(**batch["X"])
+        labels = LabelSet(**batch["y"])
+        batch = Batch(X=features, y=labels)
+
+        return batch
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
