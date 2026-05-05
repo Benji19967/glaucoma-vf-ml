@@ -120,6 +120,6 @@ class HybViT(L.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "monitor": "val/mse_loss",
+                "monitor": "val_loss",
             },
         }
