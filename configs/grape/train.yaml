@@ -1,5 +1,6 @@
 model:
-  class_path: glaucoma_vf.models.grape_efficient_net.EfficientNetModel
+  # class_path: glaucoma_vf.models.grape_efficient_net.EfficientNetModel
+  class_path: glaucoma_vf.models.grape_hyb_vit.HybViT
   init_args:
     lr: 1e-4
 data:
