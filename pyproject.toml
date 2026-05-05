@@ -26,6 +26,7 @@ dependencies = [
     "seaborn>=0.13.2",
     "setuptools==80.8.0",
     "tensorboard>=2.20.0",
+    "timm>=1.0.26",
     "torch>=2.10.0",
     "torchvision>=0.25.0",
 ]

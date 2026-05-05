@@ -63,6 +63,13 @@ Deep learning for glaucoma analysis using visual field (perimetry) data
 uv sync
 ```
 
+on HPC cluster:
+
+```
+export UV_CACHE_DIR="~/.cache/uv"
+uv sync
+```
+
 ### Getting the data
 
 ```
