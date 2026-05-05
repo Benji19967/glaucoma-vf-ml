@@ -4,7 +4,6 @@ import lightning as L
 import numpy as np
 import polars as pl
 from PIL import Image
-from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
 from glaucoma_vf.data.data_utils import df_to_vf_grids_grape

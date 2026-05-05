@@ -15,6 +15,10 @@ COORDINATES_DIR = GRAPE_DIR / "json"
 # CFPS_DIR = GRAPE_DIR / "CFPs"
 # ROI_IMAGES_DIR = GRAPE_DIR / "ROI images"
 
+# ImageNet defaults
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD = [0.229, 0.224, 0.225]
+
 
 class FeatureSet(TypedDict):
     image: torch.Tensor
@@ -71,7 +75,12 @@ class GRAPEDataset(Dataset):
                     - image_name: name of the optic nerve image
                     str
         """
-        transform = transforms.Compose([transforms.ToTensor()])
+        transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+            ]
+        )
         x_image = transform(self.x_images[idx])
 
         y_grid = torch.as_tensor(self.y_grids[idx], dtype=torch.float32).unsqueeze(0)
