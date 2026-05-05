@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models as models
 
+from glaucoma_vf.loss.perceptual_loss import PerceptualLoss
+
 
 class FeatureSet(NamedTuple):
     image: torch.Tensor
@@ -27,8 +29,9 @@ class ModelOutput(NamedTuple):
 
 
 class HybViT(L.LightningModule):
-    def __init__(self, lr=1e-4):  # 52 points for VF grid
+    def __init__(self, perceptual_weight=0.1, lr=1e-4):  # 52 points for VF grid
         super().__init__()
+        self.save_hyperparameters()
         self.lr = lr
 
         # Load a Hybrid ViT (e.g., R50+ViT which uses a ResNet50 backbone)
@@ -45,7 +48,8 @@ class HybViT(L.LightningModule):
             nn.Linear(1024, 61 * 61),
         )
 
-        self.loss_fn = nn.SmoothL1Loss()  # Better than MSE for grid regression
+        self.mse_loss = nn.MSELoss()
+        self.perceptual_loss = PerceptualLoss()
 
     def forward(self, X: FeatureSet):
         features = self.encoder(X.image)  # [Batch, 192]
@@ -55,19 +59,44 @@ class HybViT(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         batch, out = self._shared_step(batch)
-        loss = F.mse_loss(out.pred_grids, batch.y.grid)
-        self.log("train/mse_loss", loss, prog_bar=True)
-        return loss
+
+        # Calculate combined loss
+        mse = self.mse_loss(out.pred_grids, batch.y.grid)
+        percep = self.perceptual_loss(out.pred_grids, batch.y.grid)
+
+        total_loss = mse + (self.hparams.perceptual_weight * percep)  # type: ignore
+
+        self.log("train_mse", mse)
+        self.log("train_perceptual", percep)
+        self.log("train_loss", total_loss, prog_bar=True)
+
+        return total_loss
 
     def validation_step(self, batch, batch_idx):
         batch, out = self._shared_step(batch)
-        loss = F.mse_loss(out.pred_grids, batch.y.grid)
-        self.log("val/mse_loss", loss, prog_bar=True)
+
+        # Calculate combined loss
+        mse = self.mse_loss(out.pred_grids, batch.y.grid)
+        percep = self.perceptual_loss(out.pred_grids, batch.y.grid)
+
+        total_loss = mse + (self.hparams.perceptual_weight * percep)  # type: ignore
+
+        self.log("val_mse", mse)
+        self.log("val_perceptual", percep)
+        self.log("val_loss", total_loss, prog_bar=True)
 
     def test_step(self, batch, batch_idx) -> ModelOutput:  # type: ignore
         batch, out = self._shared_step(batch)
-        loss = F.mse_loss(out.pred_grids, batch.y.grid)
-        self.log("test/mse_loss", loss, prog_bar=True)
+
+        # Calculate combined loss
+        mse = self.mse_loss(out.pred_grids, batch.y.grid)
+        percep = self.perceptual_loss(out.pred_grids, batch.y.grid)
+
+        total_loss = mse + (self.hparams.perceptual_weight * percep)  # type: ignore
+
+        self.log("test_mse", mse)
+        self.log("test_perceptual", percep)
+        self.log("test_loss", total_loss, prog_bar=True)
 
         return out
 

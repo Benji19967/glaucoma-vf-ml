@@ -12,7 +12,7 @@ trainer:
   callbacks:
   - class_path: lightning.pytorch.callbacks.ModelCheckpoint
     init_args:
-      monitor: "val/mse_loss"
+      monitor: "val_loss"
       mode: "min"
       save_top_k: 1
       save_last: True
