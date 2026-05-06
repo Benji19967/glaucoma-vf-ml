@@ -162,7 +162,13 @@ apptainer shell --nv \
     glaucoma-ml.sif
 ```
 
-then run your command.
+then source the environment
+
+```
+source .venv/bin/activate
+```
+
+and then run your command.
 
 
 ### Creating a sandbox apptainer environment
